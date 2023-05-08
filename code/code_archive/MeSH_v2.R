@@ -1,0 +1,20 @@
+# Gene2pubmedとunmeasured/measured, DEG数を統合 (TF情報のみ)
+df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/MeSH/gene2pubmed_human.tsv", col_names = F)
+colnames(df) <- c("tax_id", "Entrez_ID", "PMID")
+head(df)
+dim(df)
+length(unique(df$Entrez_ID))
+length(unique(df$PMID))
+
+# EntrezID -> gene symbol
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("org.Hs.eg.db")
+require('org.Hs.eg.db')
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("GeneAnswers")
+library(GeneAnswers)
+#library(org.Hs.eg.db)
+getSymbols(c(1,2), 'org.Hs.eg.db')

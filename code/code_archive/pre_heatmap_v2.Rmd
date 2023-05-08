@@ -1,0 +1,75 @@
+---
+title: "pre_heatmap_v2"
+output: html_document
+date: "2023-01-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+df <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/analysis/DROMPA_hg38/data/experimentList_tab4.rds")
+```
+
+# ヒストン 
+```{r}
+# ヒストンのAntigenごとに列名を変更する 
+anno_df <- df %>% filter(Genome == "hg38" & Antigen_class == "Histone") 
+dim(anno_df)
+length(unique(anno_df$ID))
+unique(anno_df$Antigen)
+length(unique(anno_df$Antigen))
+```
+
+```{r}
+df4 <- anno_df %>% group_by(Cell_type_class, Antigen) %>% summarize(num = n())
+df4
+
+df5 <- df4 %>% pivot_wider(names_from = Cell_type_class, values_from = num)
+row_lab <- df5$Antigen
+df6 <- df5 %>% select(-Antigen)
+df7 <- df6 %>% as.matrix()
+rownames(df7) <- row_lab
+df7[which(is.na(df7))] <- 0
+head(df7)
+dim(df7)
+saveRDS(df7, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/Histone_TF_CTC_sample_num.rds")
+```
+
+
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/Histone_TF_CTC_sample_num.rds")
+head(df7)
+dim(df7)
+summary(df7)
+
+library(ComplexHeatmap)
+heatmap(df7)
+
+for(i in 1:20){
+  hist(df7[,i],breaks = 30)
+}
+```
+# ComplexHeatmap
+https://jokergoo.github.io/ComplexHeatmap-reference/book/index.html
+
+```{r}
+df7 <- t(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-10, 0, 10), c("gray", "white", "red"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 4), column_names_gp = gpar(fontsize = 4))
+
+#クラスタリングあり
+Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 4), column_names_gp = gpar(fontsize = 4))
+```
+
+
+
+

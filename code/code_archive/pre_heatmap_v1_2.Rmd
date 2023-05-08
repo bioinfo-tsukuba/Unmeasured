@@ -1,0 +1,380 @@
+---
+title: "pre_heatmap_v1"
+output: html_document
+date: "2023-01-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Command + option + I でRチャンク挿入
+
+
+# load data
+```{r}
+library(tidyverse)
+library(ComplexHeatmap)
+df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/experimentList.tab", col_names = F)
+head(df)
+df2 <- df %>%  select(X1, X2, X3, X4, X5, X6)
+head(df2)
+colnames(df2) <- c("ID", "Genome", "Antigen_class", "Antigen", "Cell_type_class", "Cell_type")
+head(df2)
+dim(df2)
+```
+
+
+```{r}
+anno_df <- df2 %>% filter(Genome == "hg38" & Antigen_class == "TFs and others")
+dim(anno_df)
+length(unique(anno_df$ID))
+```
+# 集計
+```{r}
+print("IDs")
+length(unique(anno_df$ID))
+print("TFs")
+length(unique(anno_df$Antigen))
+print("Cell_type_class")
+length(unique(anno_df$Cell_type_class))
+print("Cell_type")
+length(unique(anno_df$Cell_type))
+```
+```{r}
+# TFあたりの ChIP-seqサンプル数
+TF_summary <- anno_df %>% group_by(Antigen) %>% summarise(n = n())
+TF_summary
+summary(TF_summary$n)
+
+# TFあたりの cell type class数
+tmp <- anno_df %>% group_by(Antigen, Cell_type_class) %>% summarise(n = n())
+tmp
+TF_summary2 <- tmp %>% group_by(Antigen) %>% summarise(n2 = n())
+TF_summary2
+summary(TF_summary2$n2)
+
+# TFあたりの cell type数
+tmp <- anno_df %>% group_by(Antigen, Cell_type) %>% summarise(n = n())
+tmp
+TF_summary3 <- tmp %>% group_by(Antigen) %>% summarise(n2 = n())
+TF_summary3
+summary(TF_summary3$n2)
+
+# Cell type classあたりの ChIP-seqサンプル数
+CTC_summary <- anno_df %>% group_by(Cell_type_class) %>% summarise(n = n())
+CTC_summary
+summary(CTC_summary$n)
+
+# Cell type classあたりの TF数
+tmp <- anno_df %>% group_by( Cell_type_class, Antigen) %>% summarise(n = n())
+tmp
+CTC_summary2 <- tmp %>% group_by(Cell_type_class) %>% summarise(n2 = n())
+CTC_summary2
+summary(CTC_summary2$n2)
+
+# Cell type classあたりの Cell type数
+tmp <- anno_df %>% group_by(Cell_type_class, Cell_type) %>% summarise(n = n())
+tmp
+CTC_summary3 <- tmp %>% group_by(Cell_type_class) %>% summarise(n2 = n())
+CTC_summary3
+summary(CTC_summary3$n2)
+
+```
+# Cell type(992) × TF(1210)
+```{r}
+# Cell type×TFs
+df4 <- anno_df %>% group_by(Cell_type, Antigen) %>% summarize(num = n())
+df4
+
+df5 <- df4 %>% pivot_wider(names_from = Cell_type, values_from = num)
+row_lab <- df5$Antigen
+df6 <- df5 %>% select(-Antigen)
+df7 <- df6 %>% as.matrix()
+rownames(df7) <- row_lab
+df7[which(is.na(df7))] <- 0
+head(df7)
+dim(df7)
+saveRDS(df7, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CT_sample_num_new.rds")
+
+
+# ヒートマップの0の数数える
+element_num <- dim(df6)[1]*dim(df6)[2]
+element_num
+zero_num <- sum(is.na(df6))
+zero_num 
+zero_num/element_num
+```
+
+
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CT_sample_num_new.rds")
+df7 <- t(df7)
+dim(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+
+  Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+
+```
+# Cell type class(22) × TF(1210) 
+```{r}
+df4 <- anno_df %>% group_by(Cell_type_class, Antigen) %>% summarize(num = n())
+df4
+
+df5 <- df4 %>% pivot_wider(names_from = Cell_type_class, values_from = num)
+row_lab <- df5$Antigen
+df6 <- df5 %>% select(-Antigen)
+df7 <- df6 %>% as.matrix()
+rownames(df7) <- row_lab
+df7[which(is.na(df7))] <- 0
+head(df7)
+dim(df7)
+saveRDS(df7, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+
+# ヒートマップの0の数数える
+element_num <- dim(df6)[1]*dim(df6)[2]
+element_num
+zero_num <- sum(is.na(df6))
+zero_num
+zero_num/element_num
+```
+
+
+```{r}
+summary(anno_df)
+head(anno_df)
+dim(anno_df)
+```
+
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+df7 <- t(df7)
+dim(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+
+Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+```
+# Cell type class(22) × TF Family(56) 
+```{r}
+# TF family のアノテーションをふる left_annotation = rowAnnotation(foo2 = 18:1, bar2 = anno_barplot(runif(18))) とか？
+TF_fam <- read_tsv("/Users/saeko/MOCCS_paper_public/data/Fig3/TF_Information.txt")
+head(TF_fam)
+
+# join
+Antigen_anno <- anno_df$Antigen %>% as.character() %>% unique()
+Antigen_TF_fam <- TF_fam$TF_Name %>% as.character() %>% unique()
+Antigen_share <- intersect(Antigen_anno, Antigen_TF_fam)
+length(Antigen_share)
+TF_fam2 <- TF_fam %>% filter(TF_Name %in% Antigen_share) %>% select(TF_Name, Family_Name)
+colnames(TF_fam2) <- c("Antigen", "Antigen_family")
+anno_df_fam <- anno_df %>% left_join(TF_fam2, by = "Antigen")
+saveRDS(anno_df_fam, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/annotation_family_new.rds")
+```
+
+
+# ここはもうやらなくて良いセル！！
+```{r}
+# TF familyごとに行名を変更する (行を少なめに変更する)
+anno_df_fam <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/annotation_family_new.rds")
+TF_family <- anno_df_fam$Antigen_family %>% as.character() %>% unique()
+length(TF_family)
+
+# TF family ごとに行名を変更する (列を22列に変更する)
+df8 <- anno_df_fam %>% drop_na(Antigen_family) %>% group_by(Cell_type_class, Antigen_family) %>% summarize(num = n())
+df8
+
+df9 <- df8 %>% pivot_wider(names_from = Cell_type_class, values_from = num)
+row_lab <- df9$Antigen_family
+df10 <- df9 %>% select(-Antigen_family)
+df11 <- df10 %>% as.matrix()
+rownames(df11) <- row_lab
+df11[which(is.na(df11))] <- 0
+head(df11)
+dim(df11)
+saveRDS(df11, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_family_CTC_sample_num_new.rds")
+
+# ヒートマップの0の数数える
+element_num <- dim(df10)[1]*dim(df10)[2]
+element_num
+zero_num <- sum(is.na(df10))
+zero_num
+zero_num/element_num
+
+```
+
+```{r}
+df11 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_family_CTC_sample_num_new.rds")
+df12 <- t(df11)
+head(df12)
+dim(df12)
+
+# rowごとにsample数集計
+row_sum <- apply(df12, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(df12, 2, sum)
+summary(col_sum)
+
+library(circlize)
+col_fun = colorRamp2(c(0,1), c( "white", "red"))
+
+Heatmap(df12, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 6))
+
+Heatmap(df12, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 6))
+
+```
+
+
+# Histone 
+```{r}
+anno_df <- df2 %>% filter(Genome == "hg38" & Antigen_class == "Histone")
+dim(anno_df)
+length(unique(anno_df$ID))
+```
+
+# 集計
+```{r}
+print("IDs")
+length(unique(anno_df$ID))
+print("TFs")
+length(unique(anno_df$Antigen))
+print("Cell_type_class")
+length(unique(anno_df$Cell_type_class))
+print("Cell_type")
+length(unique(anno_df$Cell_type))
+```
+```{r}
+# TFあたりの ChIP-seqサンプル数
+TF_summary <- anno_df %>% group_by(Antigen) %>% summarise(n = n())
+TF_summary
+summary(TF_summary$n)
+
+# TFあたりの cell type class数
+tmp <- anno_df %>% group_by(Antigen, Cell_type_class) %>% summarise(n = n())
+tmp
+TF_summary2 <- tmp %>% group_by(Antigen) %>% summarise(n2 = n())
+TF_summary2
+summary(TF_summary2$n2)
+
+# TFあたりの cell type数
+tmp <- anno_df %>% group_by(Antigen, Cell_type) %>% summarise(n = n())
+tmp
+TF_summary3 <- tmp %>% group_by(Antigen) %>% summarise(n2 = n())
+TF_summary3
+summary(TF_summary3$n2)
+
+# Cell type classあたりの ChIP-seqサンプル数
+CTC_summary <- anno_df %>% group_by(Cell_type_class) %>% summarise(n = n())
+CTC_summary
+summary(CTC_summary$n)
+
+# Cell type classあたりの TF数
+tmp <- anno_df %>% group_by( Cell_type_class, Antigen) %>% summarise(n = n())
+tmp
+CTC_summary2 <- tmp %>% group_by(Cell_type_class) %>% summarise(n2 = n())
+CTC_summary2
+summary(CTC_summary2$n2)
+
+# Cell type classあたりの Cell type数
+tmp <- anno_df %>% group_by(Cell_type_class, Cell_type) %>% summarise(n = n())
+tmp
+CTC_summary3 <- tmp %>% group_by(Cell_type_class) %>% summarise(n2 = n())
+CTC_summary3
+summary(CTC_summary3$n2)
+
+```
+
+#  Antigen(123)× Cell type(1208)
+```{r}
+# Cell type×TFs
+df4 <- anno_df %>% group_by(Cell_type, Antigen) %>% summarize(num = n())
+df4
+
+df5 <- df4 %>% pivot_wider(names_from = Cell_type, values_from = num)
+row_lab <- df5$Antigen
+df6 <- df5 %>% select(-Antigen)
+df7 <- df6 %>% as.matrix()
+rownames(df7) <- row_lab
+df7[which(is.na(df7))] <- 0
+head(df7)
+dim(df7)
+saveRDS(df7, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/Histone_TF_CT_sample_num_new.rds")
+
+
+# ヒートマップの0の数数える
+element_num <- dim(df6)[1]*dim(df6)[2]
+element_num
+zero_num <- sum(is.na(df6))
+zero_num
+zero_num/element_num
+```
+
+
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/Histone_TF_CT_sample_num_new.rds")
+dim(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+
+Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 0), column_names_gp = gpar(fontsize = 0))
+```
+
+# Cell type class(22) × Antigen(123)
+```{r}
+df4 <- anno_df %>% group_by(Cell_type_class, Antigen) %>% summarize(num = n())
+df4
+
+df5 <- df4 %>% pivot_wider(names_from = Cell_type_class, values_from = num)
+row_lab <- df5$Antigen
+df6 <- df5 %>% select(-Antigen)
+df7 <- df6 %>% as.matrix()
+rownames(df7) <- row_lab
+df7[which(is.na(df7))] <- 0
+head(df7)
+dim(df7)
+saveRDS(df7, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/Histone_TF_CTC_sample_num_new.rds")
+
+# ヒートマップの0の数数える
+element_num <- dim(df6)[1]*dim(df6)[2]
+element_num
+zero_num <- sum(is.na(df6))
+zero_num
+zero_num/element_num
+```
+
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+df7 <- t(df7)
+dim(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 4), column_names_gp = gpar(fontsize = 3))
+
+Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 4), column_names_gp = gpar(fontsize = 3))
+```

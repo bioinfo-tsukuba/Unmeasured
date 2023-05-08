@@ -1,0 +1,551 @@
+---
+title: "pre_RNA-seq"
+output: html_document
+date: "2023-01-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# RefEx
+```{r}
+#ターミナルからwget https://refex.dbcls.jp/download/RefEx_expression_RNAseq40_human_PRJEB2445.tsv.zipしてunzipしたもの：
+RNA_df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445.tsv")
+head(RNA_df)
+RefSeqID <- RNA_df$NCBI_RefSeqID
+length(RefSeqID)
+write(RefSeqID, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefSeqID.txt")
+
+colnames(RNA_df[2:11])
+```
+# get gene symbol from RefseqID https://www.biostars.org/p/86728/
+https://www.biotools.fr/human/refseq_symbol_converter
+でIDをペーストして得た。
+NAが4016/41138個あったがどうするか？
+```{r}
+RefSeqID_converted <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefSeqID_converted.txt", col_names = F)
+head(RefSeqID_converted)
+dim(RefSeqID_converted)
+View(RefSeqID_converted)
+
+tmp <- RefSeqID_converted %>% filter(is.na(X2) ==TRUE)
+head(tmp)
+dim(tmp)
+View(tmp)
+length(unique(tmp$X1))
+```
+
+# ChIP-Atlas annotation 
+```{r}
+df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/experimentList.tab", col_names = F)
+df2 <- df %>%  select(X1, X2, X3, X4, X5, X6)
+colnames(df2) <- c("ID", "Genome", "Antigen_class", "Antigen", "Cell_type_class", "Cell_type")
+df3 <- df2 %>% filter(Genome == "hg38" & Antigen_class == "TFs and others") %>% distinct()
+head(df3)
+dim(df3)
+
+cell_type_class_list <- df3$Cell_type_class %>% unique()
+length(cell_type_class_list)
+cell_type_class_list
+cell_type_list <- df3$Cell_type %>% unique()
+length(cell_type_list)
+head(cell_type_list)
+
+
+df4 <- df3 %>% select(Cell_type_class, Cell_type) %>% arrange(Cell_type_class)%>% distinct()
+head(df4)
+dim(df4)
+write_tsv(df4, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/hg38_ctc_ct.tsv")
+```
+
+
+# Heatmap RNA-seq
+```{r}
+RNA_df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445.tsv")
+dim(RNA_df)
+head(RNA_df)
+symbol_df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefSeqID_converted.txt", col_names = F)
+colnames(symbol_df) <- c("RefSeqID", "symbol")
+head(symbol_df)
+RNA_df2 <- RNA_df %>% mutate(gene_symbol = symbol_df$symbol)
+head(RNA_df2)
+write_tsv(RNA_df2, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_symbol.tsv")
+```
+
+```{r}
+RNA_df2 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_symbol.tsv")
+df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/experimentList.tab", col_names = F)
+df2 <- df %>%  select(X1, X2, X3, X4, X5, X6)
+colnames(df2) <- c("ID", "Genome", "Antigen_class", "Antigen", "Cell_type_class", "Cell_type")
+df3 <- df2 %>% filter(Genome == "hg38" & Antigen_class == "TFs and others") %>% distinct()
+
+tgt_tf <- df3$Antigen %>% unique()
+length(tgt_tf)
+
+share_tf <- intersect(tgt_tf, RNA_df2$gene_symbol)
+length(share_tf)
+
+RNA_df3 <- RNA_df2 %>% filter(gene_symbol %in% share_tf)%>% distinct()
+rowname <- RNA_df3$gene_symbol
+RNA_df4 <- RNA_df3 %>% select(-NCBI_RefSeqID, -gene_symbol) %>% as.matrix()
+rownames(RNA_df4) <- rowname
+head(RNA_df4)
+saveRDS(RNA_df4, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+```
+```{r}
+# FPKMの分布
+RNA_df4 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+FPKM_list <- RNA_df4 %>% as.numeric()
+summary(FPKM_list)
+var(FPKM_list)
+sd(FPKM_list)
+hist(FPKM_list, breaks = 30)
+hist(log(FPKM_list, base = 10), breaks = 50)
+
+library(ggbeeswarm)
+row <- rownames(RNA_df4)
+tmp <- RNA_df4 %>% as_tibble() %>% mutate(TF = row) %>% pivot_longer(cols = -TF, names_to = "cell_type_class", values_to = "ex")
+tmp %>% ggplot(aes(x = cell_type_class, y = ex, color = cell_type_class)) +
+  geom_violin()+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+            panel.grid.major = element_line(colour = "gray"),
+            panel.grid.minor = element_line(colour="gray"),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour="black"),
+            axis.text=element_text(size=12,face="bold"),
+            axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+            axis.text.y =element_text(size=10,face="bold"),
+            axis.title=element_text(size=14,face="bold"),
+            #legend.position = c(0.85,0.2),
+            legend.background = element_blank(),
+            legend.key = element_blank(),
+            legend.box.background = element_rect(colour = "black"),
+            aspect.ratio = 0.7
+      )
+
+```
+
+
+```{r}
+t_RNA_df4 <- t(RNA_df4)
+# rowごとにsample数集計
+row_sum <- apply(t_RNA_df4, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(t_RNA_df4, 2, sum)
+summary(col_sum)
+
+library(circlize)
+col_fun = colorRamp2(c(0,20), c( "white", "red"))
+
+library(ComplexHeatmap)
+Heatmap(t_RNA_df4, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 1))
+
+Heatmap(t_RNA_df4, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 6), column_names_gp = gpar(fontsize = 1))
+
+```
+
+
+```{r}
+# TF familyとCell type class？
+TF_fam <- read_tsv("/Users/saeko/MOCCS_paper_public/data/Fig3/TF_Information.txt")
+head(TF_fam)
+
+# join
+Antigen_anno <- rownames(RNA_df4)
+Antigen_TF_fam <- TF_fam$TF_Name %>% as.character() %>% unique()
+Antigen_share <- intersect(Antigen_anno, Antigen_TF_fam)
+length(Antigen_share)
+TF_fam2 <- TF_fam %>% filter(TF_Name %in% Antigen_share) %>% select(TF_Name, Family_Name)
+colnames(TF_fam2) <- c("gene_symbol", "Antigen_family")
+anno_df_fam <- RNA_df2 %>% left_join(TF_fam2, by = "gene_symbol") %>% drop_na(Antigen_family) %>% distinct()
+dim(anno_df_fam)
+
+
+anno_df_fam_2 <- anno_df_fam %>% pivot_longer(cols = c(-NCBI_RefSeqID, -Antigen_family, -gene_symbol), names_to = "tissue", values_to = "ex") %>% group_by(Antigen_family, tissue) %>% summarise(mean_ex = mean(ex))
+
+df8 <- anno_df_fam_2 %>% drop_na(Antigen_family)
+df8
+
+df9 <- df8 %>% pivot_wider(names_from = tissue, values_from = mean_ex)
+row_lab <- df9$Antigen_family
+df10 <- df9 %>% as_tibble()%>% select(-Antigen_family)
+df11 <- df10 %>% as.matrix()
+rownames(df11) <- row_lab
+df11[which(is.na(df11))] <- 0
+head(df11)
+dim(df11)
+
+saveRDS(df11, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/TF_family_tissue_hg38_Refseq_RNAseq_meanex.rds")
+```
+```{r}
+df12 <- t(df11)
+head(df12)
+dim(df12)
+
+# rowごとにsample数集計
+row_sum <- apply(df12, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(df12, 2, sum)
+summary(col_sum)
+
+library(circlize)
+col_fun = colorRamp2(c(0,5), c( "white", "red"))
+
+Heatmap(df12, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 6))
+
+Heatmap(df12, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 6))
+
+```
+
+
+# Heatmap ChIP-Atlas、RNA-seqにあわせてやり直す
+# TF family × Cell type class
+```{r}
+rm(list=ls())
+mt_RNA<- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/TF_family_tissue_hg38_Refseq_RNAseq_meanex.rds")
+mt_Chip <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_family_CTC_sample_num_new.rds") 
+
+share_TF <- intersect(rownames(mt_RNA), rownames(mt_Chip)) 
+length(share_TF)
+
+# Antigen familyの行を2つの行列で揃える
+order_RNA<- order(rownames(mt_RNA))
+order_Chip<- order(rownames(mt_Chip))
+mt_RNA2 <-mt_RNA[order_RNA,]
+mt_Chip2 <-mt_Chip[order_Chip,]
+
+# Ctc, tissueを2つの行列で揃える
+colnames(mt_Chip2)
+colnames(mt_RNA2)
+mt_Chip3 <- mt_Chip2 %>% as_tibble() %>% select(-Bone, -Embryo, -Epidermis, -`No description`, -Others, -Pancreas, -Placenta, -`Pluripotent stem cell`, -Unclassified)
+
+# ChIP-AtlasのCell type classアノテーションを、RefEXに合わせる
+mt_Chip4 <- mt_Chip3 %>% mutate(muscular = rowSums(mt_Chip3[, c(4, 10)])) %>% select(-Cardiovascular, -Muscle) #CardiovascularとMuscleはmuscular"へ
+mt_Chip5 <- mt_Chip4 %>% mutate(reproductive = rowSums(mt_Chip3[, c(6, 12, 13)])) %>% select(-Gonad, -Prostate, -Uterus) #GonadとProstateとUterusは"reproductive"へ
+
+mt_Chip6 <- mt_Chip5 %>% select("Neural", "Breast", "Blood", "Adipocyte", "reproductive", "muscular", "Digestive tract", "Liver", "Lung", "Kidney") 
+colnames(mt_Chip6) <- colnames(mt_RNA2)
+mt_Chip6 <- mt_Chip6 %>% as.matrix()
+rownames(mt_Chip6) <- rownames(mt_Chip2)
+```
+
+
+```{r}
+t_mt_Chip6 <- t(mt_Chip6)
+t_mt_RNA2 <- t(mt_RNA2)
+
+# rowごとにsample数集計
+row_sum <- apply(t_mt_Chip6, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(t_mt_Chip6, 2, sum)
+summary(col_sum)
+
+library(circlize)
+col_fun = colorRamp2(c(0,1), c( "white", "red"))
+
+heat1 <- Heatmap(t_mt_Chip6, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title ="Number of ChIP-seq")
+
+heat1_clu <- Heatmap(t_mt_Chip6, col = col_fun, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title = "Number of ChIP-seq")
+
+
+
+# rowごとにsample数集計
+row_sum2 <- apply(t_mt_RNA2, 1, sum)
+summary(row_sum2)
+# colごとにsample数集計
+col_sum2 <- apply(t_mt_RNA2, 2, sum)
+summary(col_sum2)
+
+library(circlize)
+col_fun2 = colorRamp2(c(0,5), c( "white", "blue"))
+
+heat2 <- Heatmap(t_mt_RNA2, col = col_fun2, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title = "RNA expression")
+
+heat2_clu <- Heatmap(t_mt_RNA2, col = col_fun2, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title = "RNA expression")
+
+
+heat1+heat2
+heat1_clu+heat2_clu
+
+
+
+```
+# FPKM  > 2.77(上位25%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+dim(t_mt_Chip6)
+dim(t_mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(t_mt_Chip6), ncol = ncol(t_mt_Chip6))
+for (i in 1:nrow(t_mt_Chip6)) {
+  for (j in 1:ncol(t_mt_Chip6)) {
+    tgt_Chip <- t_mt_Chip6[i,j]
+    tgt_RNA <- t_mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 2.77){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(t_mt_Chip6)
+colnames(mt_ovl) <- colnames(t_mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+col_fun3 = colorRamp2(c(0,1), c( "white", "yellow"))
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title = "Unmeasured", row_title = "Cell type class")
+
+heat3_clu <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title  = "Unmeasured", row_title = "Cell type class")
+
+heat3 
+heat3_clu
+
+heat1+heat2+heat3
+heat1_clu+heat2_clu+heat3_clu
+
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```
+
+
+
+# FPKM  > 1.63(上位50%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+dim(t_mt_Chip6)
+dim(t_mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(t_mt_Chip6), ncol = ncol(t_mt_Chip6))
+for (i in 1:nrow(t_mt_Chip6)) {
+  for (j in 1:ncol(t_mt_Chip6)) {
+    tgt_Chip <- t_mt_Chip6[i,j]
+    tgt_RNA <- t_mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 1.63){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(t_mt_Chip6)
+colnames(mt_ovl) <- colnames(t_mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+col_fun3 = colorRamp2(c(0,1), c( "white", "yellow"))
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title = "Unmeasured", row_title = "Cell type class")
+
+heat3_clu <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 8), column_names_gp = gpar(fontsize = 3), column_title  = "Unmeasured", row_title = "Cell type class")
+
+heat3 
+heat3_clu
+
+heat1+heat2+heat3
+heat1_clu+heat2_clu+heat3_clu
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```
+
+# TF×Cell_type_class
+```{r}
+rm(list=ls())
+mt_RNA <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+mt_Chip <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+
+share_TF <- intersect(rownames(mt_RNA), rownames(mt_Chip)) 
+length(share_TF)
+
+mt_RNA <- mt_RNA[share_TF, ]
+mt_Chip <- mt_Chip[share_TF, ]
+
+# Antigenの行を2つの行列で揃える
+order_RNA<- order(rownames(mt_RNA))
+order_Chip<- order(rownames(mt_Chip))
+mt_RNA2 <- mt_RNA[order_RNA,]
+mt_Chip2 <-mt_Chip[order_Chip,]
+
+# Ctc, tissueを2つの行列で揃える
+colnames(mt_Chip2)
+colnames(mt_RNA2)
+mt_Chip3 <- mt_Chip2 %>% as_tibble() %>% select(-Bone, -Embryo, -Epidermis, -`No description`, -Others, -Pancreas, -Placenta, -`Pluripotent stem cell`, -Unclassified)
+
+# ChIP-AtlasのCell type classアノテーションを、RefEXに合わせる
+mt_Chip4 <- mt_Chip3 %>% mutate(muscular = rowSums(mt_Chip3[, c(4, 10)])) %>% select(-Cardiovascular, -Muscle) #CardiovascularとMuscleはmuscular"へ
+mt_Chip5 <- mt_Chip4 %>% mutate(reproductive = rowSums(mt_Chip3[, c(6, 12, 13)])) %>% select(-Gonad, -Prostate, -Uterus) #GonadとProstateとUterusは"reproductive"へ
+
+mt_Chip6 <- mt_Chip5 %>% select("Neural", "Breast", "Blood", "Adipocyte", "reproductive", "muscular", "Digestive tract", "Liver", "Lung", "Kidney") 
+colnames(mt_Chip6) <- colnames(mt_RNA2)
+mt_Chip6 <- mt_Chip6 %>% as.matrix()
+rownames(mt_Chip6) <- rownames(mt_Chip2)
+```
+
+```{r}
+#t_mt_Chip6 <- t(mt_Chip6)
+#t_mt_RNA2 <- t(mt_RNA2)
+
+# rowごとにsample数集計
+row_sum <- apply(mt_Chip6, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(mt_Chip6, 2, sum)
+summary(col_sum)
+
+library(circlize)
+col_fun = colorRamp2(c(0,1), c( "white", "red"))
+
+heat1 <- Heatmap(mt_Chip6, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "Number of ChIP-seq")
+
+heat1_clu <- Heatmap(mt_Chip6, col = col_fun, cluster_rows = FALSE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "Number of ChIP-seq")
+
+
+
+# rowごとにsample数集計
+row_sum2 <- apply(mt_RNA2, 1, sum)
+summary(row_sum2)
+# colごとにsample数集計
+col_sum2 <- apply(mt_RNA2, 2, sum)
+summary(col_sum2)
+
+library(circlize)
+col_fun2 = colorRamp2(c(0,5), c( "white", "blue"))
+
+heat2 <- Heatmap(mt_RNA2, col = col_fun2, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "RNA expression")
+
+heat2_clu <- Heatmap(mt_RNA2, col = col_fun2, cluster_rows = FALSE, cluster_columns = TRUE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "RNA expression")
+
+
+heat1+heat2
+heat1_clu+heat2_clu
+```
+# FPKM  > 2.77(上位25%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+dim(mt_Chip6)
+dim(mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(mt_Chip6), ncol = ncol(mt_Chip6))
+for (i in 1:nrow(mt_Chip6)) {
+  for (j in 1:ncol(mt_Chip6)) {
+    tgt_Chip <- mt_Chip6[i,j]
+    tgt_RNA <- mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 2.77){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(mt_Chip6)
+colnames(mt_ovl) <- colnames(mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+col_fun3 = colorRamp2(c(0,1), c( "white", "yellow"))
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "Unmeasured", row_title = "Cell type class")
+
+heat3_clu <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title  = "Unmeasured", row_title = "Cell type class")
+
+heat3 
+heat3_clu
+
+heat1+heat2+heat3
+heat1_clu+heat2_clu+heat3_clu
+
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+nrow(mt_ovl)*ncol(mt_ovl)
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```
+
+
+
+# FPKM  > 1.63(上位50%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+dim(mt_Chip6)
+dim(mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(mt_Chip6), ncol = ncol(mt_Chip6))
+for (i in 1:nrow(mt_Chip6)) {
+  for (j in 1:ncol(mt_Chip6)) {
+    tgt_Chip <- mt_Chip6[i,j]
+    tgt_RNA <- mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 1.63){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(mt_Chip6)
+colnames(mt_ovl) <- colnames(mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+col_fun3 = colorRamp2(c(0,1), c( "white", "yellow"))
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "Unmeasured", row_title = "Cell type class")
+
+heat3_clu <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title  = "Unmeasured", row_title = "Cell type class")
+
+heat3 
+heat3_clu
+
+heat1+heat2+heat3
+heat1_clu+heat2_clu+heat3_clu
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+dim(mt_ovl)
+nrow(mt_ovl)*ncol(mt_ovl)
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```

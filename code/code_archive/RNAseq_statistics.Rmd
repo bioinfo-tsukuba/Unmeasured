@@ -1,0 +1,460 @@
+---
+title: "RNAseq_statistics"
+output: html_document
+date: "2023-01-28"
+fig_width: 10
+fig_height: 10 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=10, fig.height=12) 
+```
+
+# RefEX
+```{r}
+library(tidyverse)
+RNA_df2 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_symbol.tsv")
+RNA_df2
+dim(RNA_df2)
+RNA_df4 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+RNA_df4
+dim(RNA_df4)
+```
+
+```{r}
+# TF vs all gene expression
+all_gene <- unique(RNA_df2$gene_symbol)
+all_gene_N <- length(unique(RNA_df2$gene_symbol))
+all_gene_N
+TF_gene <- rownames(RNA_df4)
+TF_gene_N <- length(TF_gene)
+TF_gene_N
+
+df_allg <- RNA_df2 %>% pivot_longer(cols = -c(NCBI_RefSeqID, gene_symbol), names_to = "tissue", values_to = "FPKM")
+summary(df_allg$FPKM)
+var(df_allg$FPKM)
+df_TFg <- RNA_df4 %>% as_tibble() %>% mutate(gene_symbol = TF_gene) %>% pivot_longer(cols = -gene_symbol, names_to = "tissue", values_to = "FPKM")
+summary(df_TFg$FPKM)
+var(df_TFg$FPKM)
+
+tmp1 <- df_allg %>% select(gene_symbol, FPKM,tissue) %>% mutate(category = "All")
+tmp2 <- df_TFg %>% select(gene_symbol, FPKM, tissue) %>% mutate(category = "TF") 
+df_join <- rbind(tmp1, tmp2)
+
+df_join %>% ggplot(aes(x = FPKM, base = 2, fill = category)) +
+  geom_histogram(alpha = 0.8, bins = 100)+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=12,face="bold"),
+        axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=10,face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        #legend.position = c(0.85,0.2),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        aspect.ratio = 0.7
+  )
+df_join %>% ggplot(aes(x = FPKM, base = 2, fill = category)) +
+  geom_histogram(alpha = 0.8, bins = 100)+
+  xlim(c(-1, 10))+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=12,face="bold"),
+        axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=10,face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        #legend.position = c(0.85,0.2),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        aspect.ratio = 0.7
+  )
+df_join %>% ggplot(aes(x = log(FPKM, base = 2), fill = category)) +
+  geom_histogram(alpha = 0.8, bins = 100)+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=12,face="bold"),
+        axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=10,face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        #legend.position = c(0.85,0.2),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        aspect.ratio = 0.7
+  )
+
+# Allのみ
+df_join %>% filter(category == "All") %>%
+  ggplot(aes(x = FPKM, fill = category)) +
+  geom_histogram(alpha = 0.8, bins = 100)+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=12,face="bold"),
+        axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=10,face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        #legend.position = c(0.85,0.2),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        aspect.ratio = 0.7
+  )
+
+# TFのみ
+df_join %>% filter(category == "TF") %>%
+  ggplot(aes(x = FPKM, fill = category)) +
+  geom_histogram(alpha = 0.8, bins = 100)+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=12,face="bold"),
+        axis.text.x =element_text(size=10,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=10,face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        #legend.position = c(0.85,0.2),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black"),
+        aspect.ratio = 0.7
+  )
+```
+```{r}
+# tissudeごとのFPKM
+library(patchwork)
+tis_list <- unique(df_TFg$tissue)
+for (i in 1:10) {
+  tgt_tis <- tis_list[i]
+  tgt_df <- df_join %>% filter(tissue == tgt_tis)
+  p <- tgt_df %>% ggplot(aes(x = log(FPKM, base = 2), fill = category)) +
+    geom_histogram(alpha = 0.8, bins = 100)+
+    ggtitle(tgt_tis)+
+    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+          panel.grid.major = element_line(colour = "gray"),
+          panel.grid.minor = element_line(colour="gray"),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour="black"),
+          axis.text=element_text(size=3,face="bold"),
+          axis.text.x =element_text(size=3,face="bold", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=3,face="bold"),
+          axis.title=element_text(size=5,face="bold"),
+          legend.position = "none",
+          legend.background = element_blank(),
+          legend.key = element_blank(),
+          legend.box.background = element_rect(colour = "black"),
+          aspect.ratio = 0.7
+    )
+  if(i == 1){
+    p_patch <- p
+  }else{
+    p_patch <-  p_patch + p
+  }
+}
+
+#pdf("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/FigS1/", paper = "a4")
+plot(p_patch + plot_layout(nrow = 3, ncol = 4), height = 100)
+#dev.off()
+
+```
+
+
+```{r}
+# TFごとのFPKM
+library(patchwork)
+TF_list <- unique(df_TFg$gene_symbol)
+length(TF_list)
+for (i in 1:length(TF_list)) {
+  tgt_TF <- TF_list[i]
+  tgt_df <- df_join %>% filter(gene_symbol == tgt_TF)
+  p <- tgt_df %>% ggplot(aes(x = log(FPKM, base = 2), fill = category)) +
+    geom_histogram(alpha = 0.8)+
+    ggtitle(tgt_TF)+
+    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+          panel.grid.major = element_line(colour = "gray"),
+          panel.grid.minor = element_line(colour="gray"),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour="black"),
+          axis.text=element_text(size=3,face="bold"),
+          axis.text.x =element_text(size=3,face="bold", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=3,face="bold"),
+          axis.title=element_text(size=5,face="bold"),
+          legend.position = "none",
+          legend.background = element_blank(),
+          legend.key = element_blank(),
+          legend.box.background = element_rect(colour = "black"),
+          aspect.ratio = 0.7
+    )
+  if(i == 1){
+    p_patch <- p
+  }else{
+    p_patch <-  p_patch + p
+  }
+}
+
+#pdf("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/FigS1/", paper = "a4")
+plot(p_patch[[1]] + plot_layout(nrow = 3, ncol = 4), height = 100)
+plot(p_patch[1:12] + plot_layout(nrow = 3, ncol = 4), height = 100)
+#dev.off()
+
+```
+
+
+# RefEX, CAGE
+```{r}
+df_CAGE <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_CAGE40_human_PRJDB1099.tsv")
+head(df_CAGE)
+dim(df_CAGE)
+colnames(df_CAGE)
+NCBI_geneID <- df_CAGE$NCBI_GeneID
+write(NCBI_geneID, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/tmp.txt", ncolumns = 1)
+
+# NCBI_geneIDの変換：https://www.syngoportal.org/convert　を用いた
+gene_symbol_df <- read_csv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEX_CAGE_gene_symbol_SynGo/idmap.csv")
+dim(gene_symbol_df)
+head(gene_symbol_df)
+gene_symbol_df2 <- gene_symbol_df %>% dplyr::select(query, symbol)
+colnames(gene_symbol_df2) <- c("NCBI_GeneID", "gene_symbol")
+df_CAGE2 <- df_CAGE %>% left_join(gene_symbol_df2, by = "NCBI_GeneID")
+write_tsv(df_CAGE2, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_CAGE40_human_PRJDB1099_genesymbol.tsv")
+```
+
+
+```{r}
+df_CAGE2 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_CAGE40_human_PRJDB1099_genesymbol.tsv")
+length(unique(df_CAGE2$gene_symbol))
+
+# TFに絞る
+RNA_df4 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+TF_gene <- rownames(RNA_df4)
+TF_gene_N <- length(TF_gene)
+TF_gene_N
+
+df_CAGE3 <- df_CAGE2 %>% filter(gene_symbol %in% TF_gene)
+dim(df_CAGE3)
+length(unique(df_CAGE3$gene_symbol))
+```
+```{r}
+# familyごとにplot
+TF_fam <- read_tsv("/Users/saeko/MOCCS_paper_public/data/Fig3/TF_Information.txt")
+TF_fam2 <- TF_fam %>% dplyr::select(TF_Name, Family_Name) %>% distinct()
+colnames(TF_fam2) <- c("gene_symbol", "TF_famiy")
+dim(TF_fam2)
+
+df_CAGE4 <- df_CAGE3 %>% left_join(TF_fam2, by = "gene_symbol")
+dim(df_CAGE4)
+df_CAGE5 <- df_CAGE4 %>% pivot_longer(cols = c(-NCBI_GeneID, -gene_symbol, -TF_famiy), names_to = "tissue", values_to = "log2_TPM") 
+
+fam_list <- df_CAGE5$TF_famiy %>% unique()
+rm(p_patch)
+for (i in 42:length(fam_list)) {
+  tgt_fam <- fam_list[i]
+  tgt_table <- df_CAGE5 %>% filter(TF_famiy == tgt_fam)
+  if(nrow(tgt_table) != 0){
+    p <- tgt_table %>% ggplot(aes(x = log2_TPM)) +
+      geom_histogram()+
+      ggtitle(tgt_fam)+
+      xlim(c(-1.5, 9))+
+      theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+            panel.grid.major = element_line(colour = "gray"),
+            panel.grid.minor = element_line(colour="gray"),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour="black"),
+            axis.text=element_text(size=3,face="bold"),
+            axis.text.x =element_text(size=3,face="bold", angle = 45, hjust = 1),
+            axis.text.y =element_text(size=3,face="bold"),
+            axis.title=element_text(size=3,face="bold"),
+            legend.position = "none",
+            legend.background = element_blank(),
+            legend.key = element_blank(),
+            legend.box.background = element_rect(colour = "black")#,
+            #aspect.ratio = 0.7
+      )
+    if(exists("p_patch") == FALSE){
+      p_patch <- p 
+    }else{
+      p_patch <- p_patch + p
+    }
+  }
+}
+
+plot(p_patch + plot_layout(nrow = 4, ncol = 5))
+
+```
+
+```{r}
+df_CAGE5
+length(unique(df_CAGE5$TF_famiy))
+unique(df_CAGE5$TF_famiy)
+
+# log2(TPM+1)の値が-1の場合、TPMが-であることを示すので、多分計測されていない。そのサンプルを覗いて、familyごとにtissueの種類を記録する
+tmp <- df_CAGE5 %>% filter(log2_TPM != -1) %>%  select(TF_famiy, tissue) %>% distinct() %>% group_by(TF_famiy) %>% summarise(tissue_N = n())
+View(tmp)
+
+tmp2 <- df_CAGE5 %>% filter(log2_TPM != -1) %>% select(gene_symbol, TF_famiy) %>% distinct() %>% group_by(TF_famiy) %>% summarise(TF_N = n())
+View(tmp2)
+```
+
+
+```{r}
+# TFごとのplot
+length(unique(df_CAGE5$gene_symbol))
+tmp <- df_CAGE5 %>% group_by(gene_symbol) %>% summarise(mean_TPM = mean(log2_TPM)) %>% arrange(desc(mean_TPM))
+tf_list <- tmp$gene_symbol %>% unique()
+#df_CAGE6 <- df_CAGE5 %>% arrange(desc(log2_TPM))
+#tf_list <- df_CAGE6$gene_symbol %>% unique()
+
+start <- 1
+end <- start +99
+for (j in 1:12) {
+  print(start)
+  print(end)
+  
+  rm(p_patch)
+  for (i in start:end) {
+    tgt_tf <- tf_list[i]
+    tgt_table <- df_CAGE5 %>% filter(gene_symbol== tgt_tf) %>% filter(log2_TPM != -1)
+    if(nrow(tgt_table) != 0){
+      p <- tgt_table %>% ggplot(aes(x = log2_TPM)) +
+        geom_histogram()+
+        ggtitle(tgt_tf)+
+        xlim(c(-1.5, 9))+
+        ylim(c(0, 30)) +
+        theme(plot.title = element_text(size = 10, face="bold",hjust = 0.5), 
+              panel.grid.major = element_line(colour = "gray"),
+              panel.grid.minor = element_line(colour="gray"),
+              panel.background = element_blank(), 
+              axis.line = element_line(colour="black"),
+              axis.text=element_text(size=3,face="bold"),
+              axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+              axis.text.y =element_text(size=5,face="bold"),
+              axis.title=element_text(size=3,face="bold"),
+              legend.position = "none",
+              legend.background = element_blank(),
+              legend.key = element_blank(),
+              legend.box.background = element_rect(colour = "black")#,
+              #aspect.ratio = 0.7
+        )
+      if(exists("p_patch") == FALSE){
+        p_patch <- p 
+      }else{
+        p_patch <- p_patch + p
+      }
+    }
+  }
+  plot(p_patch + plot_layout(nrow = 10, ncol = 10))
+  start <- end + 1
+  end <- start +99
+}
+
+```
+```{r}
+count_tis_tf <- df_CAGE5 %>% filter(log2_TPM != -1) %>% group_by(gene_symbol) %>% summarise(count = n())
+
+unique(count_tis_tf$count)
+```
+
+```{r}
+cell_dep_tf_df <- read_tsv("/Users/saeko/MOCCS_paper_public/data/TableS1/Supplementary_table_S1_parts_7.tsv")
+cell_dep_tf <- cell_dep_tf_df %>% filter(ctc_depedent == "Y") %>% .$TF %>% unique()
+cell_nondep_tf <- cell_dep_tf_df %>% filter(ctc_depedent == "N") %>% .$TF %>% unique()
+
+
+rm(p_patch)
+var_dep <- c()
+for (i in 1:length(cell_dep_tf)) {
+  tgt_tf <- cell_dep_tf[i]
+  tgt_table <- df_CAGE5 %>% filter(gene_symbol== tgt_tf) %>% filter(log2_TPM != -1)
+  if(nrow(tgt_table) != 0){
+    var <- var(tgt_table$log2_TPM)
+    var_dep <- c(var_dep, var)
+    print(var)
+    p <- tgt_table %>% ggplot(aes(x = log2_TPM)) +
+      geom_histogram()+
+      ggtitle(tgt_tf)+
+      xlim(c(-1.5, 9))+
+      ylim(c(0, 30)) +
+      theme(plot.title = element_text(size = 10, face="bold",hjust = 0.5), 
+            panel.grid.major = element_line(colour = "gray"),
+            panel.grid.minor = element_line(colour="gray"),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour="black"),
+            axis.text=element_text(size=5,face="bold"),
+            axis.text.x =element_text(size=7,face="bold", angle = 45, hjust = 1),
+            axis.text.y =element_text(size=7,face="bold"),
+            axis.title=element_text(size=5,face="bold"),
+            legend.position = "none",
+            legend.background = element_blank(),
+            legend.key = element_blank(),
+            legend.box.background = element_rect(colour = "black")#,
+            #aspect.ratio = 0.7
+      )+annotate("text", x=6,   y=25, label= var)
+    if(exists("p_patch") == FALSE){
+      p_patch <- p 
+    }else{
+      p_patch <- p_patch + p
+    }
+    rm(var)
+  }
+}
+plot(p_patch + plot_layout(nrow =6, ncol = 6))
+summary(var_dep)
+
+
+
+rm(p_patch)
+var_nondep <- c()
+for (i in 1:length(cell_nondep_tf)) {
+  tgt_tf <- cell_nondep_tf[i]
+  tgt_table <- df_CAGE5 %>% filter(gene_symbol== tgt_tf) %>% filter(log2_TPM != -1)
+  if(nrow(tgt_table) != 0){
+    var <- var(tgt_table$log2_TPM)
+    var_nondep <- c(var_nondep, var)
+    print(var)
+    p <- tgt_table %>% ggplot(aes(x = log2_TPM)) +
+      geom_histogram()+
+      ggtitle(tgt_tf)+
+      xlim(c(-1.5, 9))+
+      ylim(c(0, 30)) +
+      theme(plot.title = element_text(size = 10, face="bold",hjust = 0.5), 
+            panel.grid.major = element_line(colour = "gray"),
+            panel.grid.minor = element_line(colour="gray"),
+            panel.background = element_blank(), 
+            axis.line = element_line(colour="black"),
+            axis.text=element_text(size=5,face="bold"),
+            axis.text.x =element_text(size=7,face="bold", angle = 45, hjust = 1),
+            axis.text.y =element_text(size=7,face="bold"),
+            axis.title=element_text(size=5,face="bold"),
+            legend.position = "none",
+            legend.background = element_blank(),
+            legend.key = element_blank(),
+            legend.box.background = element_rect(colour = "black")#,
+            #aspect.ratio = 0.7
+      )+annotate("text", x=6,   y=25, label= var)
+    if(exists("p_patch") == FALSE){
+      p_patch <- p 
+    }else{
+      p_patch <- p_patch + p
+    }
+    rm(var)
+  }
+}
+plot(p_patch + plot_layout(nrow =6, ncol = 6))
+summary(var_nondep)
+```
+

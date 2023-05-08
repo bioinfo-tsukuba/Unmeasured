@@ -1,0 +1,330 @@
+---
+title: "heatmap_Fig1_for_GLBIO2023"
+output: html_document
+date: "2023-03-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=5, fig.height=5) 
+```
+
+
+```{r}
+library(tidyverse)
+library(ComplexHeatmap)
+df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/experimentList.tab", col_names = F)
+head(df)
+df2 <- df %>%  select(X1, X2, X3, X4, X5, X6)
+head(df2)
+colnames(df2) <- c("ID", "Genome", "Antigen_class", "Antigen", "Cell_type_class", "Cell_type")
+head(df2)
+dim(df2)
+```
+
+# Cell type class(22) × TF(1210) 
+```{r}
+df7 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+df7 <- t(df7)
+dim(df7)
+# rowごとにsample数集計
+row_sum <- apply(df7, 1, sum)
+# colごとにsample数集計
+col_sum <- apply(df7, 2, sum)
+
+library(circlize)
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red3"))
+Heatmap(df7, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 5), column_names_gp = gpar(fontsize = 0))
+
+Heatmap(df7, col = col_fun, cluster_rows = TRUE, cluster_columns = TRUE,  top_annotation = HeatmapAnnotation(sample_sum = anno_barplot(col_sum)), right_annotation =rowAnnotation(sample = anno_barplot(row_sum)),row_names_gp = gpar(fontsize = 5), column_names_gp = gpar(fontsize = 0))
+```
+
+
+# TF×Cell_type_class
+```{r}
+mt_RNA <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+mt_Chip <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/TF_CTC_sample_num_new.rds")
+
+share_TF <- intersect(rownames(mt_RNA), rownames(mt_Chip)) 
+length(share_TF)
+
+mt_RNA <- mt_RNA[share_TF, ]
+mt_Chip <- mt_Chip[share_TF, ]
+
+# Antigenの行を2つの行列で揃える
+order_RNA<- order(rownames(mt_RNA))
+order_Chip<- order(rownames(mt_Chip))
+mt_RNA2 <- mt_RNA[order_RNA,]
+mt_Chip2 <-mt_Chip[order_Chip,]
+
+# Ctc, tissueを2つの行列で揃える
+colnames(mt_Chip2)
+colnames(mt_RNA2)
+mt_Chip3 <- mt_Chip2 %>% as_tibble() %>% select(-Bone, -Embryo, -Epidermis, -`No description`, -Others, -Pancreas, -Placenta, -`Pluripotent stem cell`, -Unclassified)
+
+# ChIP-AtlasのCell type classアノテーションを、RefEXに合わせる
+mt_Chip4 <- mt_Chip3 %>% mutate(muscular = rowSums(mt_Chip3[, c(4, 10)])) %>% select(-Cardiovascular, -Muscle) #CardiovascularとMuscleはmuscular"へ
+mt_Chip5 <- mt_Chip4 %>% mutate(reproductive = rowSums(mt_Chip3[, c(6, 12, 13)])) %>% select(-Gonad, -Prostate, -Uterus) #GonadとProstateとUterusは"reproductive"へ
+
+mt_Chip6 <- mt_Chip5 %>% select("Neural", "Breast", "Blood", "Adipocyte", "reproductive", "muscular", "Digestive tract", "Liver", "Lung", "Kidney") 
+colnames(mt_Chip6) <- colnames(mt_RNA2)
+mt_Chip6 <- mt_Chip6 %>% as.matrix()
+rownames(mt_Chip6) <- rownames(mt_Chip2)
+```
+
+
+```{r}
+# rowごとにsample数集計
+row_sum <- apply(mt_Chip6, 1, sum)
+summary(row_sum)
+# colごとにsample数集計
+col_sum <- apply(mt_Chip6, 2, sum)
+summary(col_sum)
+
+library(circlize)
+#col_fun = colorRamp2(c(0,1), c( "#FEEEED", "#F36C21"))
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red3"))
+
+heat1 <- Heatmap(mt_Chip6, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Number of ChIP-seq", row_title = "TF")
+
+# rowごとにsample数集計
+row_sum2 <- apply(mt_RNA2, 1, sum)
+summary(row_sum2)
+# colごとにsample数集計
+col_sum2 <- apply(mt_RNA2, 2, sum)
+summary(col_sum2)
+
+library(circlize)
+#col_fun2 = colorRamp2(c(0,5), c( "#F7FCFE", "#00AEEF"))
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "blue"))
+
+heat2 <- Heatmap(mt_RNA2, col = col_fun2, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "RNA expression", row_title = "TF")
+
+heat1+heat2
+```
+
+# FPKM  > 2.77(上位25%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+knitr::opts_chunk$set(fig.width=3, fig.height=3) 
+dim(mt_Chip6)
+dim(mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(mt_Chip6), ncol = ncol(mt_Chip6))
+for (i in 1:nrow(mt_Chip6)) {
+  for (j in 1:ncol(mt_Chip6)) {
+    tgt_Chip <- mt_Chip6[i,j]
+    tgt_RNA <- mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 2.77){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(mt_Chip6)
+colnames(mt_ovl) <- colnames(mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+#col_fun3 = colorRamp2(c(0,1), c( "#CCE7D3", "#008000"),transparency = 0.5, space = "RGB")
+col_fun3 = colorRamp2(c(0,1), c( "white", "red3"),transparency = 0.5, space = "RGB")
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Unmeasured", row_title = "TF")
+heat3 
+
+heat1+heat2+heat3
+heat1+heat3
+heat_all <- heat1+heat2+heat3
+png("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/Fig1_heat_TF_ctc.png", width = 1400, height = 700)
+heat_all
+dev.off()
+
+png("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/Fig1_heat1_Chip.png", width = 300, height = 700)
+heat1
+dev.off()
+
+png("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/Fig1_heat2_RNA.png", width = 300, height = 700)
+heat2
+dev.off()
+
+png("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/plot/Fig1_heat3_Unmeasured.png", width = 300, height = 700)
+heat3
+dev.off()
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+nrow(mt_ovl)*ncol(mt_ovl)
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```
+# 2つのheatmapをどちらもクラスタリングする
+```{r}
+knitr::opts_chunk$set(fig.width=2, fig.height=5) 
+#install.packages("dendextend")
+library(gplots)
+library(dendextend)
+dim(mt_Chip6) #heat1
+dim(mt_ovl) #heat3
+
+#行によるクラスタリングを行い、樹形図を作成
+distance_matrix <- dist(mt_Chip6)
+cluster_rows <- hclust(distance_matrix)
+dendrogram_rows <- as.dendrogram(cluster_rows)
+
+#並べ替えられた行名を取得し、データセットを並べ替え
+ordered_row_names <- labels(dendrogram_rows)
+dataset1_ordered <- mt_Chip6[ordered_row_names, ]
+dataset2_ordered <- mt_ovl[ordered_row_names, ]
+
+
+#並べ替えたデータセットを使って、ヒートマップを作成
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red3"))
+heat1 <- Heatmap(dataset1_ordered, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Number of ChIP-seq", row_title = "TF")
+
+
+col_fun3 = colorRamp2(c(0,1), c( "white", "blue"),transparency = 0.5, space = "RGB")
+heat3 <- Heatmap(dataset2_ordered, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Unmeasured", row_title = "TF")
+
+heat1 + heat3
+heat1
+heat3
+```
+
+# FPKM  > 1.63(上位50%) 以上でChIP-seqサンプルがないものを黄色で表示する
+```{r}
+dim(mt_Chip6)
+dim(mt_RNA2)
+
+mt_ovl <- matrix(nrow = nrow(mt_Chip6), ncol = ncol(mt_Chip6))
+for (i in 1:nrow(mt_Chip6)) {
+  for (j in 1:ncol(mt_Chip6)) {
+    tgt_Chip <- mt_Chip6[i,j]
+    tgt_RNA <- mt_RNA2[i,j]
+    if(tgt_Chip == 0 & tgt_RNA >= 1.63){
+      mt_ovl[i,j] <- 1
+    }else{
+      mt_ovl[i,j] <- 0
+    }
+  }
+}
+
+rownames(mt_ovl) <- rownames(mt_Chip6)
+colnames(mt_ovl) <- colnames(mt_Chip6)
+
+
+# rowごとにsample数集計
+row_sum3 <- apply(mt_ovl, 1, sum)
+summary(row_sum3)
+# colごとにsample数集計
+col_sum3 <- apply(mt_ovl, 2, sum)
+summary(col_sum3)
+
+library(circlize)
+col_fun3 = colorRamp2(c(0,1), c( "white", "yellow"))
+
+heat3 <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title = "Unmeasured", row_title = "Cell type class")
+
+heat3_clu <- Heatmap(mt_ovl, col = col_fun3, cluster_rows = TRUE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)),  row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 5), column_title  = "Unmeasured", row_title = "Cell type class")
+
+heat3 
+heat3_clu
+
+heat1+heat2+heat3
+heat1_clu+heat2_clu+heat3_clu
+
+# Unmeasuredの要素数を数える
+unme_num <- sum(as.numeric(mt_ovl))
+unme_num
+dim(mt_ovl)
+nrow(mt_ovl)*ncol(mt_ovl)
+ratio <- unme_num/(nrow(mt_ovl)*ncol(mt_ovl))
+ratio
+```
+
+# 2つのheatmapをどちらもクラスタリングする
+```{r}
+#install.packages("dendextend")
+library(gplots)
+library(dendextend)
+dim(mt_Chip6) #heat1
+dim(mt_ovl) #heat3
+
+#行によるクラスタリングを行い、樹形図を作成
+distance_matrix <- dist(mt_Chip6)
+cluster_rows <- hclust(distance_matrix)
+dendrogram_rows <- as.dendrogram(cluster_rows)
+
+#並べ替えられた行名を取得し、データセットを並べ替え
+ordered_row_names <- labels(dendrogram_rows)
+dataset1_ordered <- mt_Chip6[ordered_row_names, ]
+dataset2_ordered <- mt_ovl[ordered_row_names, ]
+
+
+#並べ替えたデータセットを使って、ヒートマップを作成
+col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red3"))
+heat1 <- Heatmap(dataset1_ordered, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum)), right_annotation = rowAnnotation(sample = anno_barplot(row_sum)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Number of ChIP-seq", row_title = "TF")
+
+
+col_fun3 = colorRamp2(c(0,1), c( "white", "blue"),transparency = 0.5, space = "RGB")
+heat3 <- Heatmap(dataset2_ordered, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, top_annotation = HeatmapAnnotation(sample = anno_barplot(col_sum2)), row_names_gp = gpar(fontsize = 1), column_names_gp = gpar(fontsize = 10), column_title = "Unmeasured", row_title = "TF")
+
+heat1 + heat3
+
+# Unmeasured /measuredの割合
+numbers <- as.numeric(mt_Chip6)
+a <- length(numbers)
+a
+zero_count <- sum(numbers == 0)
+print(zero_count)
+zero_count/a
+
+measured = a - zero_count
+measured
+```
+
+#　一部だけでheatmapを描いてみる
+```{r}
+for (i in c(1,101,201, 301, 401, 501, 601, 701, 801, 901, 1001)) {
+  mt_sub <- dataset1_ordered[i:(i+100),]
+  mt_sub2 <- dataset2_ordered[i:(i+100),]
+  
+  col_fun = colorRamp2(c(-1, 0, 1), c("gray", "white", "red3"))
+  heat1_sub <- Heatmap(mt_sub, col = col_fun, cluster_rows = FALSE, cluster_columns = FALSE,  row_names_gp = gpar(fontsize = 3), column_names_gp = gpar(fontsize = 3), column_title = "Number of ChIP-seq", row_title = "TF")
+  
+  col_fun3 = colorRamp2(c(0,1), c( "white", "blue"),transparency = 0.5, space = "RGB")
+  heat3_sub <- Heatmap(mt_sub2, col = col_fun3, cluster_rows = FALSE, cluster_columns = FALSE, row_names_gp = gpar(fontsize = 3), column_names_gp = gpar(fontsize = 3), column_title = "Unmeasured", row_title = "TF")
+  heat1_sub+heat3_sub
+}
+
+```
+
+# 円グラフ足す
+```{r}
+# measured/unmeasured
+categories <- c("", "")
+counts <- c(9150, 2260)
+color2 <- c("white", "red3")
+pie(counts, labels = categories, main = "aaa", col = color2)
+
+# unmeasured & TF expression / others
+#categories <- c("Unmeasured & TF expression", "Others")
+categories <- c("", "")
+counts <- c(2904, 11410)
+color2 <- c("blue", "white")
+
+old_par <- par(lwd = 3) # ここで線の太さを変更 (デフォルトは 1)
+pie(counts, labels = categories, main = "aaa", col = color2, init.angle = 0)
+
+# グラフィックスのパラメータを元に戻す
+par(old_par)
+```
+

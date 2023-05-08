@@ -1,0 +1,500 @@
+---
+title: "RNAseq_statistics_v2"
+output: html_document
+date: "2023-02-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=10, fig.height=10) 
+```
+
+
+# RefEX, CAGE
+```{r}
+df_CAGE2 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_CAGE40_human_PRJDB1099_genesymbol.tsv")
+length(unique(df_CAGE2$gene_symbol))
+
+# TFに絞る
+RNA_df4 <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
+TF_gene <- rownames(RNA_df4)
+TF_gene_N <- length(TF_gene)
+TF_gene_N
+
+df_CAGE3 <- df_CAGE2 %>% filter(gene_symbol %in% TF_gene)
+dim(df_CAGE3)
+length(unique(df_CAGE3$gene_symbol))
+
+
+# familyごとにplot
+TF_fam <- read_tsv("/Users/saeko/MOCCS_paper_public/data/Fig3/TF_Information.txt")
+TF_fam2 <- TF_fam %>% dplyr::select(TF_Name, Family_Name) %>% distinct()
+colnames(TF_fam2) <- c("gene_symbol", "TF_famiy")
+dim(TF_fam2)
+
+df_CAGE4 <- df_CAGE3 %>% left_join(TF_fam2, by = "gene_symbol")
+dim(df_CAGE4)
+df_CAGE5 <- df_CAGE4 %>% pivot_longer(cols = c(-NCBI_GeneID, -gene_symbol, -TF_famiy), names_to = "tissue", values_to = "log2_TPM") 
+
+```
+# mean-max exoression plot
+```{r}
+# All genes
+df_allgene <- df_CAGE2 %>% drop_na(gene_symbol) %>% pivot_longer(cols = c(-NCBI_GeneID, -gene_symbol), names_to = "tissue", values_to = "log2_TPM") %>% filter(log2_TPM != -1)
+mean_df_all <- df_allgene %>% drop_na(gene_symbol) %>% group_by(gene_symbol) %>% summarise(mean_log2_TPM = mean(log2_TPM))
+max_df_all <- df_allgene %>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(max_log2_TPM = max(log2_TPM))
+mean_max_df_all <- mean_df_all %>% left_join(max_df_all, by = "gene_symbol")
+
+mean_max_df_all %>% ggplot(aes(x = mean_log2_TPM, y = max_log2_TPM)) +
+  geom_point(size = 2)+
+  geom_abline(intercept = 0, slope = 1)+
+  xlim(c(-0.5, 9))+
+  ylim(c(-0.5, 9))+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=15,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+# TF genes
+mean_df <- df_CAGE5 %>% filter(log2_TPM != -1)%>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(mean_log2_TPM = mean(log2_TPM))
+max_df <- df_CAGE5 %>% filter(log2_TPM != -1)%>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(max_log2_TPM = max(log2_TPM))
+mean_max_df <- mean_df %>% left_join(max_df, by = "gene_symbol")
+
+mean_max_df %>% ggplot(aes(x = mean_log2_TPM, y = max_log2_TPM)) +
+  geom_point(size = 4)+
+  geom_abline(intercept = 0, slope = 1)+
+  xlim(c(-0.5, 9))+
+  ylim(c(-0.5, 9))+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=15,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+```
+# All geneでCV計算してplot
+```{r}
+knitr::opts_chunk$set(fig.width=15, fig.height=10)
+df_allgene2 <- df_allgene %>% filter(log2_TPM != -1)%>% drop_na(gene_symbol)
+df_cv <- df_allgene2 %>% group_by(gene_symbol) %>% summarise(cv = sqrt(var(log2_TPM))/mean(log2_TPM), mean = mean(log2_TPM))
+
+df_cv %>% ggplot(aes(x = reorder(gene_symbol, cv), y = cv))+
+  geom_point(size = 1) +
+  xlab("All genes")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=5,face="bold"),
+        axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+df_cv %>% ggplot(aes(x = log(mean), y = log(cv)))+
+  geom_point(size = 4) +
+  xlab("log(mean)")+
+  ylab("log(cv)")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold"),
+        axis.text.x =element_text(size=20,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+
+# TFごとにCV計算してplot
+```{r}
+knitr::opts_chunk$set(fig.width=15, fig.height=10)
+df_CAGE6 <- df_CAGE5 %>% filter(log2_TPM != -1)%>% drop_na(gene_symbol)
+df_TF_cv <- df_CAGE6 %>% group_by(gene_symbol) %>% summarise(cv = sqrt(var(log2_TPM))/mean(log2_TPM))
+
+df_TF_cv %>% ggplot(aes(x = reorder(gene_symbol, cv), y = cv))+
+  geom_point(size = 1) +
+  xlab("TF")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=5,face="bold"),
+        axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+
+
+All genesとTFのCV比較
+```{r}
+TF_list <- df_CAGE6$gene_symbol %>% unique()
+df_cv %>% mutate(label = ifelse(gene_symbol %in% TF_list, "TF", "others"))  %>%
+  ggplot(aes(x = label, y = cv, fill = label)) +
+  geom_violin() +
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=5,face="bold"),
+        axis.text.x =element_text(size=20,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+
+```
+
+
+
+
+
+
+```{r}
+# log2TPMをTPMに直す
+TPM <- 2^df_CAGE6$log2_TPM-1
+df_CAGE7 <- df_CAGE6 %>% mutate(TPM = TPM)
+
+df_TF_cv_tpm <- df_CAGE7 %>% group_by(gene_symbol) %>% summarise(cv = sqrt(var(TPM))/mean(TPM), mean = mean(TPM))
+
+df_TF_cv_tpm %>% ggplot(aes(x = reorder(gene_symbol, cv), y = cv))+
+  geom_point(size = 1) +
+  xlab("TF")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=5,face="bold"),
+        axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+
+df_TF_cv_tpm %>% ggplot(aes(x = log(mean), y = log(cv)))+
+  geom_point(size = 4) +
+  xlab("log(Mean)")+
+  ylab("log(CV)")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold"),
+        axis.text.x =element_text(size=20,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+
+```
+
+
+```{r}
+# All genes
+df_allgene <- df_CAGE2 %>% drop_na(gene_symbol) %>% pivot_longer(cols = c(-NCBI_GeneID, -gene_symbol), names_to = "tissue", values_to = "log2_TPM") %>% filter(log2_TPM != -1)
+TPM_all <- 2^df_allgene$log2_TPM-1
+df_allgene <- df_allgene %>% mutate(TPM =TPM_all)
+mean_df_all <- df_allgene %>% drop_na(gene_symbol) %>% group_by(gene_symbol) %>% summarise(mean_TPM = mean(TPM))
+max_df_all <- df_allgene %>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(max_TPM = max(TPM))
+mean_max_df_all <- mean_df_all %>% left_join(max_df_all, by = "gene_symbol")
+
+mean_max_df_all %>% ggplot(aes(x = mean_TPM, y = max_TPM)) +
+  geom_point(size = 2)+
+  geom_abline(intercept = 0, slope = 1)+
+  #xlim(c(-0.5, 9))+
+  #ylim(c(-0.5, 9))+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=15,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+# TF genes
+mean_df <- df_CAGE7 %>% filter(TPM != -1)%>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(mean_TPM = mean(TPM))
+max_df <- df_CAGE7 %>% filter(TPM != -1)%>% drop_na(gene_symbol)%>% group_by(gene_symbol) %>% summarise(max_TPM = max(TPM))
+mean_max_df <- mean_df %>% left_join(max_df, by = "gene_symbol")
+
+mean_max_df %>% ggplot(aes(x = mean_TPM, y = max_TPM)) +
+  geom_point(size = 4)+
+  geom_abline(intercept = 0, slope = 1)+
+  #xlim(c(-0.5, 9))+
+  #ylim(c(-0.5, 9))+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_line(colour = "gray"),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=15,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+# エントロピーの計算
+```{r}
+TF_list <- df_CAGE7$gene_symbol %>% unique()
+length(TF_list)
+
+# ある遺伝子がTissueで発現が見られる確率
+df_CAGE8 <- matrix(nrow = nrow(df_CAGE7), ncol = ncol(df_CAGE7)+2)
+count <- 1
+for (i in 1:length(TF_list)) {
+  print(paste0(i, "/", length(TF_list)))
+  tgt_tf <- TF_list[i]
+  tgt_df <- df_CAGE7 %>% filter(gene_symbol == tgt_tf)
+  tgt_p <- (tgt_df$TPM+0.1)/(sum(tgt_df$TPM)+0.1) %>% as.numeric()
+  tgt_entropy <- -sum(tgt_p*log(tgt_p, base = 2)) %>% as.numeric()
+  tgt_df2 <- tgt_df %>% mutate(p = tgt_p, entropy = rep(tgt_entropy, 30)) %>% as.matrix()
+  df_CAGE8[count:(count+29),] <- tgt_df2
+  count <- count+30
+}
+
+colnames(df_CAGE8) <- c(colnames(df_CAGE7), "p", "entropy")
+df_CAGE9 <- as_tibble(df_CAGE8)
+df_CAGE9$p <- as.numeric(df_CAGE9$p)
+df_CAGE9$entropy <- as.numeric(df_CAGE9$entropy)
+write_tsv(df_CAGE9, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_TF_entropy.tsv")
+```
+
+
+```{r}
+df_CAGE9 <- read_tsv( "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_TF_entropy.tsv")
+summary(df_CAGE9$p)
+summary(df_CAGE9$entropy)
+df_CAGE9 %>% select(gene_symbol, entropy) %>% distinct() %>% ggplot(aes(x = reorder(gene_symbol, entropy), y = entropy))+
+  geom_point(size = 2) +
+  xlab("TF")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+```{r}
+hist(df_CAGE9$entropy, breaks = 50)
+summary(df_CAGE9$entropy)
+tmp <- df_CAGE9 %>% filter(entropy >= 5) %>% distinct() %>%  .$gene_symbol %>% unique()
+```
+# エントロピー, All genes
+```{r}
+df_allgene 
+
+gene_list <- df_allgene$gene_symbol %>% unique()
+length(gene_list)
+
+# ある遺伝子がTissueで発現が見られる確率
+df_allgene3 <- matrix(nrow = nrow(df_allgene), ncol = ncol(df_allgene)+2)
+count <- 1
+for (i in 1:length(gene_list)) {
+  print(paste0(i, "/", length(gene_list)))
+  tgt_gene <- gene_list[i]
+  tgt_df <- df_allgene %>% filter(gene_symbol == tgt_gene)
+  tgt_p <- (tgt_df$TPM+0.1)/(sum(tgt_df$TPM)+0.1) %>% as.numeric()
+  tgt_entropy <- -sum(tgt_p*log(tgt_p, base = 2)) %>% as.numeric()
+  tgt_df2 <- tgt_df %>% mutate(p = tgt_p, entropy = rep(tgt_entropy, 30)) %>% as.matrix()
+  df_allgene3[count:(count+29),] <- tgt_df2
+  count <- count+30
+}
+
+colnames(df_allgene3) <- c(colnames(df_allgene), "p", "entropy")
+df_allgene4 <- as_tibble(df_allgene3)
+df_allgene4$p <- as.numeric(df_allgene4$p)
+df_allgene4$entropy <- as.numeric(df_allgene4$entropy)
+write_tsv(df_allgene4, "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_allgene_entropy.tsv")
+```
+
+```{r}
+df_allgene4 <- read_tsv( "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_allgene_entropy.tsv")
+summary(df_allgene4$p)
+summary(df_allgene4$entropy)
+df_allgene4 %>% select(gene_symbol, entropy) %>% distinct() %>% ggplot(aes(x = reorder(gene_symbol, entropy), y = entropy))+
+  geom_point(size = 2) +
+  xlab("Gene")+
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=15,face="bold"),
+        axis.text.x =element_text(size=5,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=15,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+
+```{r}
+df_allgene5 <- df_allgene4 %>% mutate(label = ifelse(gene_symbol %in% TF_list, "TF", "others"))
+df_allgene5 %>% ggplot(aes(x = label, y = entropy, fill = label)) +
+  geom_violin() +
+  theme(plot.title = element_text(size = 5, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=5,face="bold"),
+        axis.text.x =element_text(size=20,face="bold", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+
+```
+# CVとEntropyの関係
+```{r}
+TPM <- 2^df_CAGE6$log2_TPM-1
+df_CAGE7 <- df_CAGE6 %>% mutate(TPM = TPM)
+df_TF_cv_tpm <- df_CAGE7 %>% group_by(gene_symbol) %>% summarise(cv = sqrt(var(TPM))/mean(TPM))
+
+df_CAGE9 <- read_tsv( "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_TF_entropy.tsv")
+df_CAGE10 <- df_CAGE9 %>% select(gene_symbol, entropy) %>% distinct() %>% left_join(df_TF_cv_tpm, by = "gene_symbol")
+
+df_CAGE10 %>% ggplot(aes(x = cv, y = entropy, label = gene_symbol)) +
+  geom_point(size = 4) +
+  geom_text(aes(x = cv + 0.1, y = entropy +0.1))+
+  xlab("cv")+
+  ylab("entropy")+
+  theme(plot.title = element_text(size = 10, face="bold",hjust = 0.5), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(colour="gray"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold"),
+        axis.text.x =element_text(size=20,face="bold"),
+        axis.text.y =element_text(size=20,face="bold"),
+        axis.title=element_text(size=20,face="bold"),
+        legend.position = "none",
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.box.background = element_rect(colour = "black")#,
+        #aspect.ratio = 0.7
+  )
+```
+
+
+# CV high, Entrioy low ovelap
+```{r}
+knitr::opts_chunk$set(fig.width=4, fig.height=4)
+TPM <- 2^df_CAGE6$log2_TPM-1
+df_CAGE7 <- df_CAGE6 %>% mutate(TPM = TPM)
+df_TF_cv_tpm <- df_CAGE7 %>% group_by(gene_symbol) %>% summarise(cv = sqrt(var(TPM))/mean(TPM))
+
+df_CAGE9 <- read_tsv( "/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_CAGE40_human_TF_entropy.tsv")
+length(unique(df_TF_cv_tpm$gene_symbol))
+length(unique(df_CAGE9$gene_symbol))
+cv_high_tf <- df_TF_cv_tpm %>% distinct() %>% arrange(desc(cv)) %>% .$gene_symbol
+cv_high_tf <- cv_high_tf[1:100]
+
+entropy_low_tf <- df_CAGE9  %>% select(gene_symbol, entropy) %>% distinct() %>% arrange(entropy) %>% .$gene_symbol
+entropy_low_tf <- entropy_low_tf[1:100]
+
+entropy_low_tf
+cv_high_tf
+intersect(entropy_low_tf, cv_high_tf)
+
+
+library(gplots)
+data <- list(entropy_low = entropy_low_tf, cv_high = cv_high_tf)
+venn(data)
+
+library(VennDiagram)
+venn.diagram(
+  data,
+  fill = c(2, 3),           # background color
+  alpha = c(0.7, 0.7),   # transparency
+  lty = c(1, 1),            # border line type
+  filename = "Overlap_cv_entropy.tiff"       # file name
+)
+```
+

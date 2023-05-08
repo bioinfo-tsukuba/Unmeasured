@@ -1,0 +1,75 @@
+---
+title: "make_ven_FigS2"
+output: html_document
+date: "2023-04-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+label1 <- c("Krt17", "IGH", "Igk-V28", "Igh-6", "Jup", "RPL17", "100042959", "Apex1", "Actbl2", "Dsp", "Sfrs2", "Rpl9", "Nol5a", "Cdc5l", "Acat1", "Rps2", "Gtf2f2", "Fip1l1", "Psma6", "Tomm34", "Mybbp1a", "Atp5c1", "Psma1", "Prdx6", "Gm189", "Rpl14", "Vdac3", "nap1l1", "Igl-V1", "Rpl3", "Try10", "Psme1", "LOC380804", "Ctsd", "HIST2H2AA3", "Eif3i", "Ddx3y", "RPL26", "Rpl4", "Fasn", "Ctnnbl1", "Rbm25", "EG627889", "Rbmxrt", "Igkv1-117", "Pole", "Serbp1", "4930422G04Rik", "Dsg1b", "Acacb", "Krt24", "Muc4", "Prpf38a", "D030074E01Rik", "Tars", "Arhgef18", "Vps13b", "Ccdc88b", "Depdc6", "Naip2", "Morc2b", "Myo18b", "Pcdh15", "Smc4", "Snrnp200", "Tlr3", "Fchsd2", "Gapdhs", "Nlrp9c", "Ranbp2", "Utrn", "Serpinb2", "9130208D14Rik", "Ophn1", "Evpl", "1700080O16Rik", "Dbf4", "Dcdc5", "Gpr98", "Zcwpw2", "Zfp148", "Mmp27", "Tcfeb", "Tchh", "Ybx1", "Ddx1", "Sox30", "Gata1", "Supt5", "Chd4")
+
+label2 <- c("Gata1", "Chd4", "Ctcf", "Tox", "Pax5", "Rad21", "Jun", "Rela", "Gata2", "Spi1", "Satb1", "Zfp384", "Ldb1", "Ep300", "Runx1")
+
+library(VennDiagram)
+library(grid)
+venn_data <- list(MS = label1, ChIPAtlas = label2)
+
+# ヴェン図を描く
+venn.plot <- venn.diagram(
+  x = venn_data,
+  filename = NULL, # NULLに設定すると、画像ファイルを作成せずにプロットを表示します
+  category.names = c("", ""),
+  fill = c("blue", "red"), # セットの色を設定,
+  alpha = 0.5, # 透明度を設定 (0:透明, 1:不透明)
+  cex = 2,
+  fontface = "bold",
+  cat.cex = 10, # ラベルの文字サイズを設定
+  #cat.fontfamily = "Arial",
+  cat.default.pos = "text", # ラベルの位置を設定
+  cat.dist = c(0.03, 0.03), # ラベルの距離を設定
+  cat.col = c("white", "white"), # ラベルの色を設定
+  main = "Venn Diagram" ,# タイトルを設定,
+  show.numbers = FALSE
+)
+
+# ヴェン図を表示
+grid.draw(venn.plot)
+```
+
+# Result2のベン図
+```{r}
+# measured/unmeasured in TF marker genes
+categories <- c("Unmeasured", "Measured")
+counts <- c(18, 68)
+color2 <- c("blue", "red3")
+
+old_par <- par(lwd = 3)
+pie(counts, labels = categories, main = "aaa", col = color2)
+# グラフィックスのパラメータを元に戻す
+par(old_par)
+
+```
+

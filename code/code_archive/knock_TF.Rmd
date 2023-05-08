@@ -1,0 +1,22 @@
+---
+title: "knock_TF"
+output: html_document
+date: "2023-01-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# KnockTF
+```{r}
+library(tidyverse)
+tmp <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/KnockTF/differential_expression_of_genes_in_all_datasets.txt")
+head(tmp)
+unique(tmp$up_down)
+length(unique(tmp$TF))
+length(unique(tmp$Gene))
+
+tmp2 <- tmp %>% group_by(TF) %>% summarise(Gene_num = n())
+View(tmp2)
+```
