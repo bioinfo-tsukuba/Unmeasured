@@ -34,7 +34,7 @@ pub_chip_plot_CISBP <- function(){
   colnames(df_chip) <- c("TF", "chip_num")
   df_join <- df_chip %>% left_join(tmp3, by = "TF") %>% drop_na(pub_num)
   
-  cor_test <- cor.test(log(df_join$pub_num, base = 10), log(df_join$chip_num, base = 10))
+  cor_test <- cor.test(log(df_join$pub_num, base = 10), log(df_join$chip_num, base = 10), method = "pearson")
   cor <- cor_test$estimate
   p <- df_join %>% ggplot(aes(x = log(pub_num, base = 10), y = log(chip_num,base = 10), label = TF)) +
     geom_point() +

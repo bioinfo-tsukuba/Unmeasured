@@ -1,4 +1,8 @@
 # TF-related paper ------
+source("/Users/saeko/Unmeasured/code/function/TF_pub_scatter.R")
+p_list <- TF_pub_scatter()
+ggsave("/Users/saeko/Unmeasured/plot/TF_pub_scatter1.pdf", p_list[[1]], width = 9, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/TF_pub_scatter2.pdf", p_list[[2]], width = 9, height = 7)
 
 
 # Year_SRX_perTF ------
