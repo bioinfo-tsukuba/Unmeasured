@@ -16,6 +16,8 @@ ggsave("/Users/saeko/Unmeasured/plot/Month_accum_uniqTF.pdf",p_list[[5]],width =
 ggsave("/Users/saeko/Unmeasured/plot/Year_chip_perTF.pdf",p_list[[6]],width = 9, height = 7)
 ggsave("/Users/saeko/Unmeasured/plot/Year_uniqTF_perCtc.pdf",p_list[[7]],width = 9, height = 7)
 
+
+
 # publication-ChIP-seq number plot ------
 ## all TFs and others
 
@@ -24,3 +26,11 @@ ggsave("/Users/saeko/Unmeasured/plot/Year_uniqTF_perCtc.pdf",p_list[[7]],width =
 source("/Users/saeko/Unmeasured/code/function/pub_chip_plot_CISBP.R")
 p <- pub_chip_plot_CISBP()
 ggsave("/Users/saeko/Unmeasured/plot/pub_chip_scatter_CISBP.pdf", p,  width = 9, height = 7)
+
+
+# comparing No. of ChIP-seq (ignored paper, Fig, 2A) ------
+source("/Users/saeko/Unmeasured/code/function/ignored_Fig2A_comp_year.R")
+comp_year()
+
+source("/Users/saeko/Unmeasured/code/function/ignored_Fig2A_comp_year_all.R")
+comp_year_all()
