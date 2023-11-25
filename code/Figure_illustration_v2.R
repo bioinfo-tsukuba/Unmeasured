@@ -1,4 +1,4 @@
-# ChIP-Atlas existence ratio (bar plot)
+# ChIP-Atlas existence ratio (bar plot) -----
 ## Cell type class
 ### version1
 source("/Users/saeko/Unmeasured/code/function/ChIP_Atlas_ctc_TF_bar_plot.R")
@@ -22,11 +22,17 @@ ggsave("/Users/saeko/Unmeasured/plot/Unmeasured_ratio_CTC_point_v2.pdf", p_list[
 # ggsave("/Users/saeko/Unmeasured/plot/Unmeasured_number_CT_bar.pdf", p_list[[1]], width = 9, height = 7)
 # ggsave("/Users/saeko/Unmeasured/plot/Unmeasured_ratio_CT_point.pdf", p_list[[2]], width = 9, height = 7)
 
-# Number of publications/DEGs between measured and unmeasured (violin plot)
+
+# Number of publications/DEGs (violin plot, scatter plot) -----
 source("/Users/saeko/Unmeasured/code/function/DEG_pub_violin.R")
 p_list <- DEG_pub_violin()
-ggsave("/Users/saeko/Unmeasured/plot/Number_of_DEG_violin.pdf", p_list[[1]], width = 4.5, height = 7)
-ggsave("/Users/saeko/Unmeasured/plot/Number_of_pub_violin.pdf", p_list[[2]], width = 4.5, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Number_of_DEG_violin_bwn_measure.pdf", p_list[[1]], width = 4.5, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Number_of_pub_violin_bwn_measure.pdf", p_list[[2]], width = 4.5, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Number_of_DEG_violin_bwn_marker.pdf", p_list[[3]], width = 4.5, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Number_of_pub_violin_bwn_marker.pdf", p_list[[4]], width = 4.5, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Scatte_pub_DEG_bwn_measure.pdf", p_list[[5]], width = 9, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Scatte_pub_DEG_bwn_marker.pdf", p_list[[6]], width = 9, height = 7)
+ggsave("/Users/saeko/Unmeasured/plot/DEG_marker_plot/Scatte_pub_DEG_filter_marker.pdf", p_list[[7]], width = 9, height = 7)
 
 
 # RR cover ratio (%) plot ----
@@ -77,7 +83,7 @@ for (tgt_row in 1:nrow(ct_list)) {
 }
 
 
-# RR ratioとUniq TFとSRX数をcell lineごとに保存
+# RR ratioとUniq TFとSRX数をcell lineごとに保存 ------
 source("/Users/saeko/Unmeasured/code/function/combine_year.R")
 ct_list <- read_tsv("/Users/saeko/Unmeasured/data/cell_type_list_RNA_ChIPAtlas.txt", col_names = F)
 colnames(ct_list) <- c("ct", "ct2")
@@ -87,4 +93,11 @@ for (tgt_row in 1:nrow(ct_list)) {
   tgt_region <- 500
   combine_year(tgt_ct, tgt_ct2, tgt_region)
 }
+
+
+# UniqueTF数, RR ratio, scatter ----
+source("/Users/saeko/Unmeasured/code/function/UniqueTF_RRratio_scatter.R")
+tgt_region <- 500
+p <- UniqueTF_RRratio_scatter(tgt_region)
+ggsave("/Users/saeko/Unmeasured/plot/UniqueTF_RRratio_scatter/UniqTF_RRratio_scatter.pdf", p)
 
