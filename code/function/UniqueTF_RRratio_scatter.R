@@ -75,9 +75,9 @@ UniqueTF_RRratio_scatter <- function(tgt_region){
             axis.text.x =element_text(size=15,face="bold", color = "black"),
             axis.text.y =element_text(size=15,face="bold", color = "black"),
             axis.title=element_text(size=15,face="bold", color = "black"),
-            aspect.ratio = 0.5
+            aspect.ratio = 1
       )
-    ggsave(paste0("/Users/saeko/Unmeasured/plot/UniqueTF_RRratio_scatter/UniqueTF_RRratio_scatter_", tgt_ct2, "_threshold_", tgt_threshold, ".pdf"), p2, width = 9, height = 7)
+    ggsave(paste0("/Users/saeko/Unmeasured/plot/UniqueTF_RRratio_scatter/UniqueTF_RRratio_scatter_threshold_", tgt_threshold, ".pdf"), p2, width = 10, height = 9)
     
     if(tgt_threshold == 1){
       patch <- p1

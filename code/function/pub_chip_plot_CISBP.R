@@ -52,7 +52,7 @@ pub_chip_plot_CISBP <- function(){
           axis.text.x =element_text(size=15,face="bold", color = "black"),
           axis.text.y =element_text(size=15,face="bold", color = "black"),
           axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
+          aspect.ratio = 1
     )
   
   

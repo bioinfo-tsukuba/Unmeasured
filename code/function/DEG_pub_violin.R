@@ -30,7 +30,7 @@ DEG_pub_violin <- function(){
           axis.text.x =element_text(size=10,face="bold", color = "black"),
           axis.text.y =element_text(size=10,face="bold", color = "black"),
           axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 2
+          aspect.ratio = 1.2
     )
   
   # Number of publications, violin plot ----
@@ -86,7 +86,7 @@ DEG_pub_violin <- function(){
           axis.text.x =element_text(size=10,face="bold", color = "black"),
           axis.text.y =element_text(size=10,face="bold", color = "black"),
           axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 2
+          aspect.ratio = 1.2
     )
   
   # Number of publications, violin plot ----
@@ -106,7 +106,7 @@ DEG_pub_violin <- function(){
           axis.text.x =element_text(size=10,face="bold", color = "black"),
           axis.text.y =element_text(size=10,face="bold", color = "black"),
           axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 2
+          aspect.ratio = 1.2
     )
   
   
@@ -146,13 +146,13 @@ DEG_pub_violin <- function(){
           axis.title=element_text(size=15,face="bold"),
           ggside.panel.scale = 0.2,
           aspect.ratio = 0.9
-    )+
-    geom_xsideviolin(aes(y = label_chip_measure), orientation = "y") + 
-    geom_xsideboxplot(aes(y = label_chip_measure), orientation = "y") + 
-    scale_xsidey_discrete(guide = guide_axis(angle = 0))+
-    geom_ysideviolin(aes(x = label_chip_measure), orientation = "x") +
-    geom_ysideboxplot(aes(x = label_chip_measure), orientation = "x") +
-    scale_ysidex_discrete(guide = guide_axis(angle = 45))
+    )#+
+    #geom_xsideviolin(aes(y = label_chip_measure), orientation = "y") + 
+    #geom_xsideboxplot(aes(y = label_chip_measure), orientation = "y") + 
+    #scale_xsidey_discrete(guide = guide_axis(angle = 0))+
+    #geom_ysideviolin(aes(x = label_chip_measure), orientation = "x") +
+    #geom_ysideboxplot(aes(x = label_chip_measure), orientation = "x") +
+    #scale_ysidex_discrete(guide = guide_axis(angle = 45))
   
   p6 <- df2 %>% #select(-Gene_type) %>% 
     distinct() %>%
@@ -177,13 +177,13 @@ DEG_pub_violin <- function(){
           axis.title=element_text(size=15,face="bold"),
           ggside.panel.scale = 0.2,
           aspect.ratio = 0.9
-    )+
-    geom_xsideviolin(aes(y = label_marker), orientation = "y") + 
-    geom_xsideboxplot(aes(y = label_marker), orientation = "y") + 
-    scale_xsidey_discrete(guide = guide_axis(angle = 0))+
-    geom_ysideviolin(aes(x = label_marker), orientation = "x") +
-    geom_ysideboxplot(aes(x = label_marker), orientation = "x") +
-    scale_ysidex_discrete(guide = guide_axis(angle = 45))
+    )#+
+    #geom_xsideviolin(aes(y = label_marker), orientation = "y") + 
+    #geom_xsideboxplot(aes(y = label_marker), orientation = "y") + 
+    #scale_xsidey_discrete(guide = guide_axis(angle = 0))+
+    #geom_ysideviolin(aes(x = label_marker), orientation = "x") +
+    #geom_ysideboxplot(aes(x = label_marker), orientation = "x") +
+    #scale_ysidex_discrete(guide = guide_axis(angle = 45))
   
   
   # filter only TF marker ---

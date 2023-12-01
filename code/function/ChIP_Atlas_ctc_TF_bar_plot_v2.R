@@ -135,5 +135,26 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
           aspect.ratio = 0.5
     )
   
-  return(list(p1, p2))
+  # bar plot with percentage number
+  p3 <- df_plot2 %>%
+    ggplot(aes(x = reorder(Cell_type_class, -Unmeasured_percentage), y = number, fill = measure, label = round(Unmeasured_percentage))) +
+    geom_bar(stat = "identity", width = 0.7) +
+    geom_text(aes(y = 320)) +
+    xlab("Cell type class (tissue)")+
+    ylab("Number of expressed TFs")+
+    scale_fill_manual(values = c("gray", "blue3")) +
+    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+          #legend.position = "none",
+          panel.grid.major = element_line(colour="gray"),
+          panel.grid.minor = element_line(colour="gray", size = 1),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour="black"),
+          axis.text=element_text(size=15,face="bold", color = "black"),
+          axis.text.x =element_text(size=15,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=15,face="bold", color = "black"),
+          axis.title=element_text(size=15,face="bold", color = "black"),
+          aspect.ratio = 0.5
+    )
+  
+  return(list(p1, p2, p3))
 }

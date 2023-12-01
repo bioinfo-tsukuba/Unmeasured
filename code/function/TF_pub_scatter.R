@@ -64,15 +64,15 @@ TF_pub_scatter <- function(){
     geom_hline(yintercept=0.25,linetype=2,alpha=0.7,size=1,color='blue') +
     geom_hline(yintercept=0.5,linetype=2,alpha=0.7,size=1,color='red') +
     geom_hline(yintercept=0.75,linetype=2,alpha=0.7,size=1,color='limegreen') +
-    geom_vline(xintercept=0.02*nrow(tmp4),linetype=2,alpha=0.7,size=1,color='blue')+
-    geom_vline(xintercept=0.1*nrow(tmp4),linetype=2,alpha=0.7,size=1,color='red')+
-    geom_vline(xintercept=0.25*nrow(tmp4),linetype=2,alpha=0.7,size=1,color='limegreen')+
+    geom_vline(xintercept=0.02*nrow(df5),linetype=2,alpha=0.7,size=1,color='blue')+
+    geom_vline(xintercept=0.1*nrow(df5),linetype=2,alpha=0.7,size=1,color='red')+
+    geom_vline(xintercept=0.25*nrow(df5),linetype=2,alpha=0.7,size=1,color='limegreen')+
     #xlim(c(1, nrow(tmp4)))+
     xlab("TF") +
     ylab("Ratio") +
-    annotate("text", x=0.02*nrow(tmp4),   y= 1, label="2%", size = 10, color = "blue") +
-    annotate("text", x=0.1*nrow(tmp4),   y= 1, label="10%", size = 10, color = "red") +
-    annotate("text", x=0.25*nrow(tmp4),   y= 1, label="25%", size = 10, color = "limegreen") +
+    annotate("text", x=0.02*nrow(df5),   y= 1, label="2%", size = 8, color = "blue") +
+    annotate("text", x=0.1*nrow(df5),   y= 1, label="10%", size = 8, color = "red") +
+    annotate("text", x=0.25*nrow(df5),   y= 1, label="25%", size = 8, color = "limegreen") +
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = "none",
           panel.grid.major = element_blank(),
@@ -83,7 +83,7 @@ TF_pub_scatter <- function(){
           axis.text.x =element_text(size=0,face="bold", colour="black", angle = 45, hjust = 1),
           axis.text.y =element_text(size=15,face="bold", colour="black"),
           axis.title=element_text(size=15,face="bold", colour="black"),
-          aspect.ratio = 0.7
+          aspect.ratio = 1
     )
   
   
