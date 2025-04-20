@@ -3,6 +3,7 @@ Year_SRX <- function(){
   library(tidyverse)
   library(ggrepel)
   library(RColorBrewer)
+  library(ggh4x)
   
   # 20231004 version
   df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/SRX_date_20231004.tsv")
@@ -14,40 +15,46 @@ Year_SRX <- function(){
   p1 <- df %>% #filter(year != 2023) %>% 
     group_by(year) %>% summarise(SRX_num =n()) %>%
     ggplot(aes(x = factor(year), y = SRX_num))+
-    geom_point(size = 3)+
-    xlab("Year")+
-    ylab("Total number of SRX (TF ChIP-seq)")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    geom_point(size = 2)+
+    labs(
+      x = "Year",
+      y = "Total number of SRX (TF ChIP-seq)"
+    )+
+    theme(plot.title = element_text(size = unit(12, "pt"), face="bold"), 
           legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=15,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+          axis.line = element_line(linewidth = unit(0.25, "pt")),
+          axis.title = element_text(size = unit(12, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(12, "pt"), colour = "black"),
+          axis.text.x =element_text(size = unit(12, "pt"), colour = "black", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
     )
   
   # month-Number of SRX ----
   p2 <- df %>% group_by(year, month) %>% summarise(SRX_num =n()) %>% 
     unite("year_month", c(year, month), sep = "_") %>%
     ggplot(aes(x = factor(year_month), y = SRX_num)) +
-    geom_point(size = 3) +
-    xlab("Year")+
-    ylab("Total number of SRX (TF ChIP-seq)")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    geom_point(size = 2) +
+    labs(
+      x = "Time",
+      y = "Total number of SRX (TF ChIP-seq)"
+    )+
+    theme(plot.title = element_text(size = unit(12, "pt"), face="bold"), 
           legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=5,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+          axis.line = element_line(linewidth = unit(0.25, "pt")),
+          axis.title = element_text(size = unit(12, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(12, "pt"), colour = "black"),
+          axis.text.x =element_text(size = unit(0, "pt"), colour = "black", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
     )
   
   # yearごとの累積SRX数 ----
@@ -58,21 +65,24 @@ Year_SRX <- function(){
   
   p3 <- df2 %>%
     ggplot(aes(x = factor(year), y = cum)) +
-    geom_point(size = 3) +
+    geom_point(size = 2) +
     xlab("Year")+
     ylab("Total number of SRX (TF ChIP-seq)")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
           legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          legend.title = element_text(size = unit(15, "pt")),
+          legend.text = element_text(size = unit(15, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=15,face="bold", color = "black",angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
-    )
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
+    ) 
   
   # 新規TFか否か ----
   num_list <- c()
@@ -110,22 +120,26 @@ Year_SRX <- function(){
   # CIS-BPで登録されているようなDBDをもつTF以外にもChIP-Atlasには含まれているため、TF数が1800を超えていると考えられる
   p4 <- df3 %>% group_by(year) %>% summarise(TF_uniq_num_max = max(TF_uniq_num)) %>%
     ggplot(aes(x = factor(year), y = TF_uniq_num_max)) +
-    geom_point(size = 5) +
+    geom_point(size = 2) +
     #geom_hline(yintercept=1639, linetype="dashed",size=1) +
     xlab("Year")+
     ylab("Total number of unique TFs")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
           legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          legend.title = element_text(size = unit(15, "pt")),
+          legend.text = element_text(size = unit(15, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold", color = "black"),
-          axis.text.x =element_text(size=10,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
-    )
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
+    ) 
+    
   p5 <- df3 %>%
     ggplot(aes(x = order, y = TF_uniq_num, label = label)) +
     geom_point(size = 1) +
@@ -133,17 +147,18 @@ Year_SRX <- function(){
     #geom_hline(yintercept=1639, linetype="dashed",size=1) +
     xlab("Time")+
     ylab("Total number of unique TFs")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5),
+    theme(plot.title = element_text(size = unit(12, "pt"), face="bold"), 
           legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
-          panel.background = element_blank(),
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=0,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+          axis.line = element_line(linewidth = unit(0.25, "pt")),
+          axis.title = element_text(size = unit(12, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(12, "pt"), colour = "black"),
+          axis.text.x =element_text(size = unit(0, "pt"), colour = "black", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
     )
   
   # TFごとにplot -------
@@ -169,23 +184,26 @@ Year_SRX <- function(){
   color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
   p6 <- df4 %>% filter(Antigen != "Epitope tags" & Antigen %in% top_TF_list[1:20]) %>%
     ggplot(aes(x = year, y = cum_per_TF, color = Antigen)) +
-    geom_point(size = 3) +
+    geom_point(size = 2) +
     geom_line() +
     scale_color_manual(values = color_list) +
     xlab("Year")+
     ylab("Total number of SRX (TF ChIP-seq)")+
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+    theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
+          legend.position = c(0.3,0.75),
+          legend.text = element_text(size = unit(15, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=15,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
-    )
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
+    ) +
+    guides(colour = guide_stringlegend(ncol = 2)) # legendを2列にする
   
   
   # Cell type classごとに、新規TFのplot ----
@@ -238,18 +256,22 @@ Year_SRX <- function(){
     xlab("Year")+
     ylab("Total number of unique TFs")+
     scale_color_manual(values = color_list) +
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+    theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
+          legend.position = c(0.3,0.75),
+          legend.title = element_text(size = unit(15, "pt")),
+          legend.text = element_text(size = unit(15, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=15,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 0.7
-    )
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
+    ) +
+    guides(colour = guide_stringlegend(ncol = 2)) # legendを2列にする
   
   return(list(p1, p2, p3, p4, p5, p6, p7))
 }

@@ -34,15 +34,15 @@ comp_year <- function(){
       geom_text_repel(size = 5, force = 10) +
       annotate("text", x=log(max(df3$SRX_num_x), base = 10),   y= 0.5, label = paste0("spearman : ", cor$estimate)) +
       theme(plot.title = element_text(face="bold",hjust = 0.5), 
-            #legend.position = "none",
-            panel.grid.major = element_line(colour="gray"),
-            panel.grid.minor = element_line(colour="gray", size = 1),
+            legend.position = "none",
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
             panel.background = element_blank(), 
-            axis.line = element_line(colour="black"),
-            axis.text=element_text(size=15,face="bold", color = "black"),
-            axis.text.x =element_text(size=15,face="bold", color = "black"),
-            axis.text.y =element_text(size=15,face="bold", color = "black"),
-            axis.title=element_text(size=15,face="bold", color = "black"),
+            axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+            axis.line = element_line(linewidth = unit(0.25, "pt")),
+            axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+            axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+            axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
             aspect.ratio = 1
       )
     ggsave(paste0("/Users/saeko/Unmeasured/plot/comp_year/comp_SRX_year_", tgt_year, ".pdf"), p1, width = 9, height = 7)

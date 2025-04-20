@@ -22,15 +22,16 @@ DEG_pub_violin <- function(){
     ylab("Number of DEGs")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold", color = "black"),
-          axis.text.x =element_text(size=10,face="bold", color = "black"),
-          axis.text.y =element_text(size=10,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 1.2
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
     )
   
   # Number of publications, violin plot ----
@@ -43,15 +44,16 @@ DEG_pub_violin <- function(){
     ylab("log10(Number of publication)")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold", color = "black"),
-          axis.text.x =element_text(size=10,face="bold", color = "black"),
-          axis.text.y =element_text(size=10,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 2
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
     )
   
   
@@ -78,15 +80,16 @@ DEG_pub_violin <- function(){
     ylab("Number of DEGs")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold", color = "black"),
-          axis.text.x =element_text(size=10,face="bold", color = "black"),
-          axis.text.y =element_text(size=10,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 1.2
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
     )
   
   # Number of publications, violin plot ----
@@ -98,15 +101,16 @@ DEG_pub_violin <- function(){
     ylab("log10(Number of publication)")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold", color = "black"),
-          axis.text.x =element_text(size=10,face="bold", color = "black"),
-          axis.text.y =element_text(size=10,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
-          aspect.ratio = 1.2
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
     )
   
   
@@ -131,22 +135,27 @@ DEG_pub_violin <- function(){
     )) +
     geom_point() +
     geom_text_repel() +
+    ggtitle("TF-cell type class pairs in KnockTF") +
     xlab("log10(Number of publication)")+
-    ylab("Number of DEGs (corrected p value < 0.05)") +
+    ylab("Number of DEGs") +
     scale_color_manual(values = c("#D7191C", "blue4"))+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          title = element_text(size=30,face="bold", color = "black"), 
+          legend.position = c(0.2,0.8),
+          legend.title = element_text(size = 15, face="bold", color = "black"),
+          legend.text = element_text(size = 15, face="bold", color = "black"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold"),
-          axis.text.x =element_text(size=10,face="bold"),
-          axis.text.y =element_text(size=10,face="bold"),
-          axis.title=element_text(size=15,face="bold"),
-          ggside.panel.scale = 0.2,
-          aspect.ratio = 0.9
-    )#+
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black"),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x = element_text(size=30,face="bold", color = "black"), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
+    )
+    #+
     #geom_xsideviolin(aes(y = label_chip_measure), orientation = "y") + 
     #geom_xsideboxplot(aes(y = label_chip_measure), orientation = "y") + 
     #scale_xsidey_discrete(guide = guide_axis(angle = 0))+
@@ -163,21 +172,24 @@ DEG_pub_violin <- function(){
     geom_point() +
     geom_text_repel() +
     xlab("log10(Number of publication)")+
-    ylab("Number of DEGs (corrected p value < 0.05)") +
+    ylab("Number of DEGs") +
     scale_color_manual(values = c("#D7191C", "gray"))+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          legend.position = c(0.2,0.8),
+          legend.title = element_text(size = 15, face="bold", color = "black"),
+          legend.text = element_text(size = 15, face="bold", color = "black"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold"),
-          axis.text.x =element_text(size=10,face="bold"),
-          axis.text.y =element_text(size=10,face="bold"),
-          axis.title=element_text(size=15,face="bold"),
-          ggside.panel.scale = 0.2,
-          aspect.ratio = 0.9
-    )#+
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black"),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x = element_text(size=30,face="bold", color = "black"), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
+    )
+    #+
     #geom_xsideviolin(aes(y = label_marker), orientation = "y") + 
     #geom_xsideboxplot(aes(y = label_marker), orientation = "y") + 
     #scale_xsidey_discrete(guide = guide_axis(angle = 0))+
@@ -196,20 +208,23 @@ DEG_pub_violin <- function(){
     geom_text_repel() +
     ggtitle("TF markers")+ 
     xlab("log10(Number of publication)")+
-    ylab("Number of DEGs (corrected p value < 0.05)") +
+    ylab("Number of DEGs") +
     scale_color_manual(values = c("gray", "blue4"))+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(color = "gray"),
+          legend.position = c(0.2,0.9),
+          legend.title = element_text(size = 15, face="bold", color = "black"),
+          legend.text = element_text(size = 15, face="bold", color = "black"),
+          panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=12,face="bold"),
-          axis.text.x =element_text(size=10,face="bold"),
-          axis.text.y =element_text(size=10,face="bold"),
-          axis.title=element_text(size=15,face="bold"),
-          ggside.panel.scale = 0.2,
-          aspect.ratio = 0.9
+          title = element_text(size=30,face="bold", color = "black"), 
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black"),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title.x = element_text(size=30,face="bold", color = "black"), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1
     )
   
   return(list(p1, p2, p3, p4, p5, p6, p7))

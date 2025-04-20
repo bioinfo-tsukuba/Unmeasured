@@ -15,6 +15,8 @@ TF_pub_scatter <- function(){
     summarise(num = n()) 
   
   library(ggrepel)
+  library(ggh4x)
+  
   df3 <- df2 %>% arrange(desc(num))
   top_tf <- df3[1:10,]$Gene_symbol %>% as.character()
   df4 <- df3 %>% mutate(gene_label = ifelse(Gene_symbol %in% top_tf, Gene_symbol, ""))
@@ -24,18 +26,32 @@ TF_pub_scatter <- function(){
     geom_text_repel(size = 5, force = 10) +
     xlab("TF") +
     ylab("Number of publications") +
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          legend.position = "none",
+    theme(plot.title = element_text(size = unit(12, "pt"), face="bold"), 
+          #legend.position = "none",
+          legend.text = element_text(size = unit(8, "pt")),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", colour="black"),
-          axis.text.x =element_text(size=0,face="bold", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", colour="black"),
-          axis.title=element_text(size=15,face="bold", colour="black"),
-          aspect.ratio = 0.7
-    )
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+          axis.line = element_line(linewidth = unit(0.25, "pt")),
+          axis.title = element_text(size = unit(12, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(12, "pt"), colour = "black"),
+          axis.text.x =element_text(size = unit(0, "pt"), colour = "black", angle = 45, hjust = 1),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 1
+    ) 
+    # theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    #       legend.position = "none",
+    #       panel.grid.major = element_blank(),
+    #       panel.grid.minor = element_blank(),
+    #       panel.background = element_blank(), 
+    #       axis.line = element_line(colour="black"),
+    #       axis.text=element_text(size=15,face="bold", colour="black"),
+    #       axis.text.x =element_text(size=0,face="bold", angle = 45, hjust = 1),
+    #       axis.text.y =element_text(size=15,face="bold", colour="black"),
+    #       axis.title=element_text(size=15,face="bold", colour="black"),
+    #       aspect.ratio = 0.7
+    # )
   
   # culumtive plot ----
   count <- 0
@@ -70,21 +86,35 @@ TF_pub_scatter <- function(){
     #xlim(c(1, nrow(tmp4)))+
     xlab("TF") +
     ylab("Ratio") +
-    annotate("text", x=0.02*nrow(df5),   y= 1, label="2%", size = 8, color = "blue") +
-    annotate("text", x=0.1*nrow(df5),   y= 1, label="10%", size = 8, color = "red") +
-    annotate("text", x=0.25*nrow(df5),   y= 1, label="25%", size = 8, color = "limegreen") +
-    theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          legend.position = "none",
+    annotate("text", x=0.02*nrow(df5),   y= 1, label="2%", size = 10, color = "blue") +
+    annotate("text", x=0.1*nrow(df5),   y= 1, label="10%", size = 10, color = "red") +
+    annotate("text", x=0.25*nrow(df5),   y= 1, label="25%", size = 10, color = "limegreen") +
+    theme(plot.title = element_text(size = unit(12, "pt"), face="bold"), 
+          #legend.position = "none",
+          legend.text = element_text(size = unit(8, "pt")),
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
-          axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", colour="black"),
-          axis.text.x =element_text(size=0,face="bold", colour="black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", colour="black"),
-          axis.title=element_text(size=15,face="bold", colour="black"),
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+          # axis.line = element_line(colour="black"),
           aspect.ratio = 1
-    )
+    ) 
+    # theme(plot.title = element_text(face="bold",hjust = 0.5), 
+    #       legend.position = "none",
+    #       panel.grid.major = element_blank(),
+    #       panel.grid.minor = element_blank(),
+    #       panel.background = element_blank(), 
+    #       axis.line = element_line(colour="black"),
+    #       axis.text=element_text(size=15,face="bold", colour="black"),
+    #       axis.text.x =element_text(size=0,face="bold", colour="black", angle = 45, hjust = 1),
+    #       axis.text.y =element_text(size=15,face="bold", colour="black"),
+    #       axis.title=element_text(size=15,face="bold", colour="black"),
+    #       aspect.ratio = 1
+    # )
   
   
   

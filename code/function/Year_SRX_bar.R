@@ -10,6 +10,12 @@ Year_SRX_bar <- function(){
     filter(Cell_type_class != "Unclassified" & Cell_type_class != "No description") %>%
     filter(Antigen != "GFP" & Antigen != "Epitope tags")
   
+  df_fam <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/data/Fig2/obj/df_fam.rds")
+  tgt_IDs <- df$SRX %>% unique() %>% as.character()
+  tgt_df_fam <- df_fam %>% filter(ID %in% tgt_IDs) %>% select(Antigen, Family) %>% distinct()
+  
+  df2 <- df %>% left_join(tgt_df_fam, by = "Antigen")
+  
   color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
   p1 <- df %>% 
     #group_by(year) %>% 

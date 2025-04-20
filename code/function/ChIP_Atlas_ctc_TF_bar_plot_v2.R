@@ -17,7 +17,7 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     df5[which(is.na(df5))] <- 0
     saveRDS(df5, "/Users/saeko/Unmeasured/data/TF_CTC_sample_num_new_20231004.rds")
     
-    # ChIP-Atlas + Refseq df ----
+    # ChIP-Atlas + RefEx df ----
     mt_Chip <- readRDS("/Users/saeko/Unmeasured/data/TF_CTC_sample_num_new_20231004.rds")
     mt_RNA <- readRDS("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/RNAseq/RefEx_expression_RNAseq10_human_PRJEB2445_heat.rds")
     share_TF <- intersect(rownames(mt_RNA), rownames(mt_Chip)) 
@@ -95,16 +95,18 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     mutate(Measured = TF_CTC_FPKM_num - Unmeasured) %>% 
     pivot_longer(-c(Cell_type_class, TF_CTC_FPKM_num, Unmeasured_percentage), names_to = "measure", values_to = "number")
   
-  p1 <- df_plot2 %>% 
+  df_plot3 <- df_plot2 %>% separate(Cell_type_class, into = c("v", "Cell_type_class"), sep = "_")
+  p1 <- df_plot3 %>% 
     ggplot(aes(x = reorder(Cell_type_class, -Unmeasured_percentage), y = number, fill = measure)) +
     geom_bar(stat = "identity", width = 0.7) +
     xlab("Cell type class (tissue)")+
     ylab("Number of expressed TFs")+
     scale_fill_manual(values = c("gray", "blue3")) +
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          legend.position = c(0.5, 1.1),
+          legend.direction = "horizontal",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
           axis.text=element_text(size=15,face="bold", color = "black"),
@@ -115,8 +117,8 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     )
   
   # unmeasured ratio 
-  df_plot3 <- df_plot1 %>% mutate(Unmeasured_percentage = (Unmeasured/TF_CTC_FPKM_num)*100)
-  p2 <- df_plot3 %>% 
+  df_plot4 <- df_plot1 %>% mutate(Unmeasured_percentage = (Unmeasured/TF_CTC_FPKM_num)*100)
+  p2 <- df_plot4 %>% 
     ggplot(aes(x = reorder(Cell_type_class, -Unmeasured_percentage), y = Unmeasured_percentage)) +
     geom_point(size = 3) +
     ylim(c(0, 100)) +
@@ -124,8 +126,8 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     ylab("Unmeasured (%)")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           #legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
           axis.text=element_text(size=15,face="bold", color = "black"),
@@ -136,7 +138,7 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     )
   
   # bar plot with percentage number
-  p3 <- df_plot2 %>%
+  p3 <- df_plot3 %>%
     ggplot(aes(x = reorder(Cell_type_class, -Unmeasured_percentage), y = number, fill = measure, label = round(Unmeasured_percentage))) +
     geom_bar(stat = "identity", width = 0.7) +
     geom_text(aes(y = 320)) +
@@ -144,17 +146,44 @@ ChIP_Atlas_ctc_TF_bar_plot_v2 <- function(calc_opt){
     ylab("Number of expressed TFs")+
     scale_fill_manual(values = c("gray", "blue3")) +
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
-          #legend.position = "none",
-          panel.grid.major = element_line(colour="gray"),
-          panel.grid.minor = element_line(colour="gray", size = 1),
+          legend.position = c(0.5, 1.1),
+          legend.direction = "horizontal",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
           panel.background = element_blank(), 
           axis.line = element_line(colour="black"),
-          axis.text=element_text(size=15,face="bold", color = "black"),
-          axis.text.x =element_text(size=15,face="bold", color = "black", angle = 45, hjust = 1),
-          axis.text.y =element_text(size=15,face="bold", color = "black"),
-          axis.title=element_text(size=15,face="bold", color = "black"),
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title=element_text(size=30,face="bold", color = "black"),
           aspect.ratio = 0.5
     )
   
-  return(list(p1, p2, p3))
+  # For poster
+  cell_order <- c("urinary", "lung", "liver", "alimentary", "muscular", "reproductive", 
+                  "connective", "blood", "endo/exo-crine", "brain") %>% rev()
+  p4 <- df_plot3 %>%
+    ggplot(aes(x = factor(Cell_type_class, cell_order), y = number, fill = measure, label = round(Unmeasured_percentage))) +
+    geom_bar(stat = "identity", width = 0.7) +
+    geom_text(aes(y = 320)) +
+    xlab("Cell type class (tissue)")+
+    ylab("Number of expressed TFs")+
+    scale_fill_manual(values = c("gray", "blue3")) +
+    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+          legend.position = c(0.5, 1.1),
+          legend.direction = "horizontal",
+          legend.text = element_text(size=30,face="bold", color = "black"),
+          legend.title = element_blank(), 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour="black"),
+          axis.text=element_text(size=30,face="bold", color = "black"),
+          axis.text.x =element_text(size=30,face="bold", color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30,face="bold", color = "black"),
+          axis.title=element_text(size=30,face="bold", color = "black"),
+          aspect.ratio = 1.5
+    )+coord_flip()
+  
+  return(list(p1, p2, p3, p4))
 }

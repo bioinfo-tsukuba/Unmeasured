@@ -35,16 +35,17 @@ comp_year_all <- function(){
       #annotate("text", x=log(max(df3$SRX_num_x), base = 10),   y= 0.5, label = paste0("spearman : ", cor$estimate)) +
       theme(plot.title = element_text(face="bold",hjust = 0.5), 
             legend.position = "none",
-            panel.grid.major = element_line(colour="gray"),
-            panel.grid.minor = element_line(colour="gray", size = 1),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
             panel.background = element_blank(), 
-            axis.line = element_line(colour="black"),
-            axis.text=element_text(size=3,face="bold", color = "black"),
-            axis.text.x =element_text(size=3,face="bold", color = "black"),
-            axis.text.y =element_text(size=3,face="bold", color = "black"),
-            axis.title=element_text(size=3,face="bold", color = "black"),
-            aspect.ratio = 0.7
+            axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+            axis.line = element_line(linewidth = unit(0.25, "pt")),
+            axis.title = element_text(size = unit(12, "pt"), colour = "black", face = "bold"),
+            axis.text = element_text(size = unit(12, "pt"), colour = "black"),
+            axis.text.x =element_text(size = unit(12, "pt"), colour = "black"),
+            aspect.ratio = 1
       )
+    
     
     if(length(patch) == 0){
       patch <- p1
