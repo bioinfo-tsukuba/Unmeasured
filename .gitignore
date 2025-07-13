@@ -48,3 +48,9 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# large data
+/Users/saeko/Unmeasured/data/GWAS_cover_ratio/overlap_all.tsv
+/Users/saeko/Unmeasured/data/ReMap2022/remap2022_all_macs2_hg38_v1_0.bed
+/Users/saeko/Unmeasured/data/Human_transcriptional_factors_Cell_2018/Supple_table.xlsx
+/Users/saeko/Unmeasured/data/GWAS_cover_ratio/full
