@@ -1,0 +1,155 @@
+---
+title: "Check_TF_marker_expression"
+output: html_document
+date: "2025-07-01"
+---
+#######################################
+############# Revise用 #############
+#######################################
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggside)
+library(tidyverse)
+library(ggrepel)
+```
+
+
+```{r}
+# TF_marker <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/TFmarker/All_TFmarkers_annotated.tsv")
+# length(unique(TF_marker$Gene_Name))
+# colnames(TF_marker) <- c("PMID", "TF", "Gene_type", "Cell_Name", "Cell_Type", "Cell_type_class")
+
+TFmarker_normal_cancer <- read_csv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/TFmarker/FPKM_marker_tib2.csv")
+df_summary_allstats_v3 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/DEG_TFmarker_pub/summary_allstats_v3.tsv")
+```
+# FPKM data
+```{r}
+mt_RNA2 <- readRDS("/Users/saeko/Unmeasured/data/mt_RNA2.rds")
+colnames(mt_RNA2)
+colnames(mt_RNA2) <- c("Neural", "Blood", "Adipocyte", "Gonad", "Cardiovascular", "Digestive tract", "Liver", "Lung", "Kidney", "Breast") 
+rowname <- rownames(mt_RNA2)
+mt_RNA2_tib <- mt_RNA2 %>% as_tibble() %>% mutate(TF = rowname)
+```
+
+```{r}
+tgt_TF_CTC <- df_summary_allstats_v3 %>% 
+  filter(is.na(Gene_type) == FALSE) %>%  #今回はTFmarkerだけではなく、他のTF PmarkerやTFなども含める
+  select(key) %>% .$key %>% unique()
+
+tgt_FPKM_list <- c()
+tgt_pair_list <- c()
+for (tgt_key in tgt_TF_CTC) {
+  tgt_TF <- strsplit(tgt_key, "_")[[1]][1]
+  tgt_CTC <- strsplit(tgt_key, "_")[[1]][2]
+  
+  if(tgt_CTC %in% colnames(mt_RNA2)){
+    tgt_FPKM_pair <- mt_RNA2_tib %>% filter(TF == tgt_TF) %>% .[,tgt_CTC]  
+    print(paste0(tgt_TF, " ", names(tgt_FPKM_pair), " ",tgt_FPKM_pair))
+    tgt_FPKM <- tgt_FPKM_pair %>% as.numeric()
+    tgt_FPKM_list <- c(tgt_FPKM_list, tgt_FPKM)
+    tgt_pair_list <- c(tgt_pair_list, tgt_key)
+  }
+}
+
+summary(tgt_FPKM_list)
+mean(tgt_FPKM_list)
+
+FPKM_marker_tib <- tibble(pair = tgt_pair_list, FPKM = tgt_FPKM_list)
+View(FPKM_marker_tib)
+FPKM_marker_tib2 <- FPKM_marker_tib %>% separate(pair, c("TF", "Cell_type_class"), sep = "_")
+#write_tsv(FPKM_marker_tib2, "/Users/saeko/Downloads/FPKM_marker_tib2.tsv")
+```
+```{r}
+FPKM_marker_tib2 <- read_tsv("/Users/saeko/Downloads/FPKM_marker_tib2.tsv")
+dim(FPKM_marker_tib2)
+FPKM_marker_tib2 %>% ggplot(aes(x = FPKM)) +
+  geom_histogram(bins = 30) +
+  theme_minimal()
+
+
+summary(FPKM_marker_tib2$FPKM)
+```
+
+# TF markerだがFPKM thresholdでexpressed TFとして入っていないものをカウント
+```{r}
+mt_RNA2 <- readRDS("/Users/saeko/Unmeasured/data/mt_RNA2.rds")
+#mt_RNA4 <- readRDS("/Users/saeko/Unmeasured/data/mt_RNA4.rds")
+mt_Chip7 <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip7.rds")
+df_summary_allstats_v3 <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/DEG_TFmarker_pub/summary_allstats_v3.tsv")
+marker_key_list <- df_summary_allstats_v3 %>% 
+  filter(is.na(Gene_type) == FALSE) %>% 
+  select(key) %>% .$key %>% unique()
+taiou <- read_csv("/Users/saeko/Unmeasured/data/RefEx_tissue_ChIPAtlas_Ctc_taiou.csv")# tissueとCell type classの対応表
+colnames(taiou) <- c("Tissue", "Cell_type_class")
+
+mt_Chip7 <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip7.rds")
+rownames_TF_chip <- rownames(mt_Chip7)
+
+
+# FPKM細胞ごとに上位25% or 50%以下だが、TF markerに入っているTF-CTCの組み合わせをcount
+tgt_threshold <- 0.5
+mt_totalTF <- matrix(0, nrow = nrow(mt_Chip7), ncol = ncol(mt_Chip7))
+for (i in 1:nrow(mt_Chip7)) {
+  for (j in 1:ncol(mt_Chip7)) {
+    
+    tgt_TF <- rownames(mt_Chip7)[i]
+    tgt_tissue <- colnames(mt_Chip7)[j]
+    tgt_Ctc_list <- taiou %>% filter(Tissue == tgt_tissue) %>% .$Cell_type_class
+    threshold <- quantile(mt_RNA2[, tgt_tissue], tgt_threshold)  #上位25 or 50%の基準となるFPKM
+    
+    if(tgt_TF %in% rownames(mt_RNA2)){
+      tgt_RNA <- mt_RNA2[tgt_TF,tgt_tissue]
+      
+      for (tgt_Ctc in tgt_Ctc_list) {
+        if(tgt_RNA < threshold & paste0(tgt_TF, "_", tgt_Ctc) %in% marker_key_list){  # expressedしていないかつmarker gene list
+          mt_totalTF[i,j] <- mt_totalTF[i,j] + 1
+          print(paste0(tgt_TF, " " , tgt_Ctc))
+          print(paste0("FPKM threshold : ", threshold))
+          print(paste0("RNA expression : ", tgt_RNA))
+        }
+      }
+    }
+  }
+}
+rownames(mt_totalTF) <- rownames(mt_Chip7)
+colnames(mt_totalTF) <- colnames(mt_Chip7)
+
+# expressedしていないかつmarker gene listかつunmeasured
+tgt_threshold <- 0.5
+mt_unmeasure_markerTF <- matrix(0, nrow = nrow(mt_Chip7), ncol = ncol(mt_Chip7))
+for (i in 1:nrow(mt_Chip7)) {
+  for (j in 1:ncol(mt_Chip7)) {
+    tgt_TF <- rownames(mt_Chip7)[i]
+    tgt_tissue <- colnames(mt_Chip7)[j]
+    tgt_Ctc_list <- taiou %>% filter(Tissue == tgt_tissue) %>% .$Cell_type_class
+    tgt_ChIP_sample_num <- mt_Chip7[tgt_TF, tgt_tissue]
+    threshold <- quantile(mt_RNA2[, tgt_tissue], tgt_threshold)  #上位25 or 50%の基準となるFPKM
+   
+    if(tgt_TF %in% rownames(mt_RNA2)){
+      tgt_RNA <- mt_RNA2[tgt_TF,tgt_tissue]
+      for (tgt_Ctc in tgt_Ctc_list) { 
+        if(tgt_RNA < threshold & 
+           paste0(tgt_TF, "_", tgt_Ctc) %in% marker_key_list &
+           tgt_ChIP_sample_num == 0 # expressedしていないかつmarker gene listかつunmeasured
+           ){  
+          mt_unmeasure_markerTF[i,j] <- mt_unmeasure_markerTF[i,j] + 1
+          print(paste0(tgt_TF, " " , tgt_Ctc))
+          print(paste0("FPKM threshold : ", threshold))
+          print(paste0("RNA expression : ", tgt_RNA))
+          print(paste0("ChIP num : ", tgt_ChIP_sample_num))
+        }
+      }
+    } 
+  }
+}
+
+```
+```{r}
+
+
+```
+

@@ -1,0 +1,816 @@
+---
+title: "Fig5_simulation_subsampling"
+output: html_document
+date: "2025-07-02"
+---
+#######################################
+############# Revise用 #############
+#######################################
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+```
+
+
+# simulation やり直し
+```{r}
+overlap_df <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/overlap_all.tsv")
+date_df4 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/SRX_date_fix4_20231004DL.tsv")
+colnames(date_df4) <- c("ID", "year", "month", "day")
+
+overlap_df2 <- overlap_df %>% left_join(date_df4, by = "ID") %>% drop_na(Cell_type_class)
+```
+# Cell typeをBloodに絞る
+```{r}
+tgt_ctc <- "Blood"
+overlap_df2_selected <- overlap_df2 %>% filter(Cell_type_class == tgt_ctc)
+unique(overlap_df2_selected$Cell_type_class)
+overlap_df2_selected$year <- as.numeric(overlap_df2_selected$year)
+overlap_df2_selected$month <- as.numeric(overlap_df2_selected$month)
+overlap_df2_selected$day <- as.numeric(overlap_df2_selected$day)
+year_list <- overlap_df2_selected %>% drop_na(year) %>% arrange(year) %>% .$year %>% unique() %>% as.numeric()
+write_tsv(overlap_df2_selected, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_real.tsv")
+
+rs_list <- c()
+TF_list <- c()
+
+ct_plot_df <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+num <- 1
+for (tgt_year in year_list) {
+  
+  tgt_rs <- overlap_df2_selected %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+  rs_list <- c(rs_list, tgt_rs)
+  cum_uniq_rs <- length(unique(rs_list))
+  
+  tgt_TF <- overlap_df2_selected %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+  TF_list <- c(TF_list, tgt_TF)
+  cum_uniq_TF <- length(unique(TF_list))
+  
+  add_row <- tibble(Cell_type = tgt_ctc, year = tgt_year, cum_uniq_rs = cum_uniq_rs, cum_uniq_TF = cum_uniq_TF)
+  ct_plot_df[num,] <- add_row
+  num <- num + 1
+}
+
+GWAS_df <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/full")
+total_rs_num <- length(unique(GWAS_df$SNPS))
+
+colnames(ct_plot_df) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+ct_plot_df2 <- ct_plot_df %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num)
+write_tsv(ct_plot_df2, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/ct_plot_df2_real.tsv")
+```
+
+```{r}
+p <- ct_plot_df2 %>% 
+  ggplot(aes(x = year, y = GWAS_cover_ratio))  +
+  geom_point() +
+  geom_line()+
+  labs(
+    x = "Year",
+    y = "GWAS-SNP cover ratio"
+  )+
+  #geom_hline(yintercept = 0.1, linetype="dashed", color = "red") +
+  ggtitle(tgt_ctc) +
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+    axis.line = element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(10, "pt")),
+    axis.text = element_text(size = unit(8, "pt"), colour = "black"),
+    axis.text.x = element_text(size= unit(8, "pt"), color = "black", angle = 45, hjust = 1),
+    panel.grid.major = element_line(linewidth = unit(0.5, "pt")), 
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    # panel.background = element_rect(fill = NA, colour = "black", linewidth = unit(0.5, "pt")),
+    panel.background = element_blank(),
+    # panel.ontop = TRUE,
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+plot(p)
+```
+# simulation
+```{r}
+df <- overlap_df2 
+number <- sample(1:length(unique(overlap_df2_selected$ID)), length(unique(overlap_df2_selected$ID)))
+GWAS_df <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/full")
+df_fam <- readRDS("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/df_fam.rds")
+source("/Users/saeko/Unmeasured/code/analysis/Revise/GWAS_overlap_simulation_v2.r")
+simulation_ID <- 1
+res1 <- GWAS_overlap_simulation_v2(tgt_ctc, number, df, GWAS_df, simulation_ID, df_fam)
+```
+
+# simulation, 100回回す
+```{r}
+df <- overlap_df2 
+GWAS_df <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/full")
+df_fam <- readRDS("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/df_fam.rds")
+source("/Users/saeko/Unmeasured/code/analysis/Revise/GWAS_overlap_simulation_v2.r")
+
+for (simulation_ID in 1:100) {
+ print(simulation_ID)
+ number <- sample(1:length(unique(overlap_df2_selected$ID)), length(unique(overlap_df2_selected$ID)))
+ res1 <- GWAS_overlap_simulation_v2(tgt_ctc, number, df, GWAS_df, simulation_ID, df_fam)
+ write_tsv(res1[[1]], paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_rand_", tgt_ctc, "_", simulation_ID, ".tsv"))
+ write_tsv(res1[[2]], paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/ct_plot_df2_", tgt_ctc, "_", simulation_ID, ".tsv"))
+ ggsave(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/", tgt_ctc, "_", simulation_ID, ".pdf"), res1[[3]], width =7, height = 7)
+}
+```
+
+
+# 結果をまとめる
+```{r fig.width=10, fig.height=10}
+df_all <- tibble()
+for (simulation_ID in 1:100) {
+  simu_df <- read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/ct_plot_df2_", tgt_ctc, "_", simulation_ID, ".tsv"))
+  if(nrow(df_all) == 0){
+    df_all <- simu_df
+  }else{
+    df_all <- rbind(df_all, simu_df)
+  }
+}
+dim(df_all)
+write_tsv(df_all, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all.tsv")
+
+df_all <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all.tsv")
+df_all %>% ggplot(aes(year, y = GWAS_cover_ratio, color = factor(simulation_ID))) +
+  geom_point() +
+    geom_line()+
+    labs(
+      x = "Year",
+      y = "GWAS-SNP cover ratio"
+    )+
+    theme(
+      aspect.ratio = 1,
+      plot.background = element_blank(),
+      plot.title = element_text(size = unit(12, "pt")),
+      plot.subtitle = element_text(size = unit(10, "pt")),
+      plot.caption = element_text(size = unit(8, "pt")),
+      plot.tag = element_text(size = unit(18, "pt")),
+      axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+      axis.line = element_line(linewidth = unit(0.5, "pt")),
+      axis.title = element_text(size = unit(10, "pt")),
+      axis.text = element_text(size = unit(8, "pt"), colour = "black"),
+      axis.text.x = element_text(size= unit(8, "pt"), color = "black", angle = 45, hjust = 1),
+      panel.grid.major = element_line(linewidth = unit(0.5, "pt")), 
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+      # panel.background = element_rect(fill = NA, colour = "black", linewidth = unit(0.5, "pt")),
+      panel.background = element_blank(),
+      # panel.ontop = TRUE,
+      legend.key = element_blank(),
+      legend.title = element_text(size = unit(10, "pt")),
+      legend.text = element_text(size = unit(10, "pt")),
+      strip.text = element_text(colour = "black", size = unit(8, "pt")),
+      strip.background = element_rect(fill = NA, color = NA)
+    )
+```
+# 上記plotに本物の推移の線を追加
+```{r}
+ct_plot_df2 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/ct_plot_df2_real.tsv")
+df_real <- ct_plot_df2 %>% mutate(simulation_ID = 0, color = "black")
+df_all2 <- df_all %>% mutate(color = "gray") %>% add_row(df_real)
+write_tsv(df_all2, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all2.tsv")
+
+df_all2 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all2.tsv")
+df_all2 %>% ggplot(aes(year, y = GWAS_cover_ratio, color = factor(color))) +
+  geom_point() +
+  geom_line()+
+  ggtitle(paste0(tgt_ctc, " simulation all")) +
+  scale_color_manual(values = c("black", "gray")) +
+  labs(
+    x = "Year",
+    y = "GWAS-SNP cover ratio"
+  )+
+  #geom_hline(yintercept = 0.1, linetype="dashed", color = "red") +
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+    axis.line = element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(10, "pt")),
+    axis.text = element_text(size = unit(8, "pt"), colour = "black"),
+    axis.text.x = element_text(size= unit(8, "pt"), color = "black", angle = 45, hjust = 1),
+    panel.grid.major = element_line(linewidth = unit(0.5, "pt")), 
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    # panel.background = element_rect(fill = NA, colour = "black", linewidth = unit(0.5, "pt")),
+    panel.background = element_blank(),
+    # panel.ontop = TRUE,
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+```
+```{r}
+tgt_ctc <- "Blood"
+df_all2 %>% ggplot(aes(year, y = cum_uniq_TF, color = factor(color))) +
+  geom_point() +
+  geom_line()+
+  ggtitle(paste0(tgt_ctc, " simulation all")) +
+  scale_color_manual(values = c("black", "gray")) +
+  labs(
+    x = "Year",
+    y = "Number of unique TFs"
+  )+
+  #geom_hline(yintercept = 0.1, linetype="dashed", color = "red") +
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.25, "pt")),
+    axis.line = element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(10, "pt")),
+    axis.text = element_text(size = unit(8, "pt"), colour = "black"),
+    axis.text.x = element_text(size= unit(8, "pt"), color = "black", angle = 45, hjust = 1),
+    panel.grid.major = element_line(linewidth = unit(0.5, "pt")), 
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    # panel.background = element_rect(fill = NA, colour = "black", linewidth = unit(0.5, "pt")),
+    panel.background = element_blank(),
+    # panel.ontop = TRUE,
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+```
+
+```{r}
+diff_list <- c()
+for (tgt_year in 2009:2023) {
+  sub_df <- df_all2 %>% filter(year == tgt_year)
+  real_ratio <- sub_df %>% filter(simulation_ID == 0) %>% .$GWAS_cover_ratio %>% as.numeric()
+  diff <- sub_df %>% mutate(diff = GWAS_cover_ratio - real_ratio) %>% .$diff %>% max()
+  print(paste0(tgt_year, " max_diff : ", diff))
+  diff_list <- c(diff_list, diff)
+}
+diff_list %>% length()
+diff_list
+summary(diff_list)
+```
+
+
+# simulationごとにAUCを計算してTableにまとめる
+```{r}
+#install.packages("pracma")
+library(pracma)
+
+#df_all <- read_tsv("/home/s-tahara/unmeasured/plot/GWAS_simulation_v1/2024_07_13_Blood/df_all.tsv")
+df_all2 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all2.tsv")
+
+auc_list <- c()
+for (i in 0:100) {
+  df_subset <- df_all2 %>% filter(simulation_ID == i)
+  p <- df_subset %>%
+    ggplot(aes(year, y = GWAS_cover_ratio, color = factor(simulation_ID))) +
+    geom_point() +
+    geom_line()+
+    ggtitle(paste0(tgt_ctc, " simu", simulation_ID)) +
+    labs(
+      x = "Year",
+      y = "GWAS-SNP cover ratio"
+    )
+  auc <- trapz(df_subset$year, df_subset$GWAS_cover_ratio)
+  auc_list <- c(auc_list, auc)
+}
+join_auc <- tibble(simulation_ID = 0:100, auc = auc_list) 
+View(join_auc)
+
+tmp <- join_auc %>% filter(simulation_ID != 0)
+tmp_real <- join_auc %>% filter(simulation_ID == 0) 
+max_auc <- max(tmp$auc)
+min_auc <- min(tmp$auc)
+real_auc <- tmp_real$auc
+max_ID <- tmp %>% filter(auc == max_auc) %>% .$simulation_ID 
+min_ID <- tmp %>% filter(auc == min_auc) %>% .$simulation_ID 
+
+write_tsv(join_auc, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/ID_auc.tsv")
+df_all3 <- df_all2 %>% left_join(join_auc, by = "simulation_ID")
+write_tsv(df_all3, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all3.tsv")
+
+```
+#aucとunique TF, cover ratioの関係
+```{r fig.width=10, fig.height=10}
+library(ggrepel)
+df_all3 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all3.tsv")
+
+p1 <- df_all3 %>% filter(simulation_ID %in% c(min_ID, max_ID, 0)) %>%
+  ggplot(aes(x = year, y = GWAS_cover_ratio, color = factor(simulation_ID))) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = c("gray", "blue", "red")) +
+  annotate("text", x = mean(df_all3$year), y = max(df_all3$GWAS_cover_ratio) - 0.02, 
+           label = paste0("AUC = ", max_auc), 
+           vjust = -1, color = "red") +
+  annotate("text", x = mean(df_all3$year)+2, y = min(df_all3$GWAS_cover_ratio)+0.1, 
+           label = paste0("AUC = ", min_auc), 
+           vjust = -1, color = "blue") +
+  annotate("text", x = mean(df_all3$year)+2, y = min(df_all3$GWAS_cover_ratio)+0.05, 
+           label = paste0("AUC = ", real_auc), 
+           vjust = -1, color = "gray") +
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+
+p1
+
+pdf("/Users/saeko/Unmeasured/plot/GWAS_cover_simulation_v2/simulation_GWAS_ratio.pdf")
+p1
+dev.off()
+```
+
+```{r}
+p2 <- df_all3 %>% filter(simulation_ID %in% c(min_ID, max_ID, 0)) %>%
+  ggplot(aes(x = year, y = cum_uniq_TF, color = factor(simulation_ID))) +
+  geom_point() +
+  geom_line() +
+  scale_color_manual(values = c("gray", "blue", "red")) +
+  annotate("text", x = mean(df_all3$year), y = max(df_all3$GWAS_cover_ratio) - 0.02, 
+           label = paste0("AUC = ", max_auc), 
+           vjust = -1, color = "red") +
+  annotate("text", x = mean(df_all3$year)+2, y = min(df_all3$GWAS_cover_ratio)+0.1, 
+           label = paste0("AUC = ", min_auc), 
+           vjust = -1, color = "blue") +
+  annotate("text", x = mean(df_all3$year)+2, y = min(df_all3$GWAS_cover_ratio)+0.05, 
+           label = paste0("AUC = ", real_auc), 
+           vjust = -1, color = "gray") +
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+
+p2
+
+pdf("/Users/saeko/Unmeasured/plot/GWAS_cover_simulation_v2/simulation_Blood_cum_TF.pdf")
+p2
+dev.off()
+```
+
+
+```{r fig.width=10, fig.height=10}
+df_all3 %>% filter(simulation_ID %in% c(min_ID, max_ID, 0)) %>%
+  ggplot(aes(x = cum_uniq_TF, y = GWAS_cover_ratio, color = factor(simulation_ID), label = year)) +
+  geom_point() +
+  geom_line() +
+  geom_text_repel() +
+  scale_color_manual(values = c("gray", "blue", "red")) +
+  annotate("text", x = mean(df_all3$cum_uniq_TF), y = max(df_all3$GWAS_cover_ratio) - 0.02, 
+           label = paste0("AUC = ", max_auc), 
+           vjust = -1, color = "red") +
+  annotate("text", x = mean(df_all3$cum_uniq_TF)+2, y = min(df_all3$GWAS_cover_ratio)+0.1, 
+           label = paste0("AUC = ", min_auc), 
+           vjust = -1, color = "blue") +
+  annotate("text", x = mean(df_all3$cum_uniq_TF)+2, y = min(df_all3$GWAS_cover_ratio)+0.05, 
+           label = paste0("AUC = ", real_auc), 
+           vjust = -1, color = "gray")+
+  theme(
+    aspect.ratio = 1,
+    plot.background = element_blank(),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA)
+  )
+```
+# sub-sampling
+```{r}
+tgt_ctc <- "Blood"
+simulation_ID_best <- tmp %>% filter(auc == max_auc) %>% .$simulation_ID 
+best_df <- read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_rand_", tgt_ctc, "_", simulation_ID_best, ".tsv")) 
+best_df2 <- best_df %>% select(-Family) %>% mutate(simu_ID = simulation_ID_best)
+real_df <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_real.tsv")
+real_df2 <- real_df %>% mutate(simu_ID = 0)
+```
+
+# best 
+```{r}
+auc_best_list <- c()
+for (i in 1:100) {
+  set.seed(i)
+  sub_best_df2 <- best_df2 %>% sample_frac(size = 0.9, replace = FALSE)
+  
+  ct_plot_df_best <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+  num <- 1
+  rs_list <- c()
+  TF_list <- c()
+  for (tgt_year in year_list) {
+    
+    tgt_rs <- sub_best_df2 %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+    rs_list <- c(rs_list, tgt_rs)
+    cum_uniq_rs <- length(unique(rs_list))
+    
+    tgt_TF <- sub_best_df2 %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+    TF_list <- c(TF_list, tgt_TF)
+    cum_uniq_TF <- length(unique(TF_list))
+    
+    add_row <- tibble(Cell_type_class = tgt_ctc, 
+                      year = tgt_year, 
+                      cum_uniq_rs = cum_uniq_rs, 
+                      cum_uniq_TF = cum_uniq_TF)
+    ct_plot_df_best[num,] <- add_row
+    num <- num + 1
+  }
+  
+  total_rs_num <- length(unique(GWAS_df$SNPS))
+  
+  colnames(ct_plot_df_best) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+  ct_plot_df2_best <- ct_plot_df_best %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num) %>%
+    mutate(simulation_ID = simulation_ID_best)
+  
+  auc <- trapz(ct_plot_df2_best$year, ct_plot_df2_best$GWAS_cover_ratio)
+  auc_best_list <- c(auc_best_list, auc)
+}
+
+
+```
+
+# real
+```{r}
+auc_real_list <- c()
+for (i in 1:100) {
+  set.seed(i)
+  sub_real_df2 <- real_df2 %>% sample_frac(size = 0.9, replace = FALSE)
+  
+  ct_plot_df_real <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+  num <- 1
+  rs_list <- c()
+  TF_list <- c()
+  for (tgt_year in year_list) {
+    
+    tgt_rs <- sub_real_df2 %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+    rs_list <- c(rs_list, tgt_rs)
+    cum_uniq_rs <- length(unique(rs_list))
+    
+    tgt_TF <- sub_real_df2 %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+    TF_list <- c(TF_list, tgt_TF)
+    cum_uniq_TF <- length(unique(TF_list))
+    
+    add_row <- tibble(Cell_type_class = tgt_ctc, 
+                      year = tgt_year, 
+                      cum_uniq_rs = cum_uniq_rs, 
+                      cum_uniq_TF = cum_uniq_TF)
+    ct_plot_df_real[num,] <- add_row
+    num <- num + 1
+  }
+  
+  total_rs_num <- length(unique(GWAS_df$SNPS))
+  
+  colnames(ct_plot_df_real) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+  ct_plot_df2_real <- ct_plot_df_real %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num) %>%
+    mutate(simulation_ID = 0)
+  
+  auc <- trapz(ct_plot_df2_real$year, ct_plot_df2_real$GWAS_cover_ratio)
+  auc_real_list <- c(auc_real_list, auc)
+}
+df_auc_real <- tibble(simulaion_ID = rep(0, 100), sub_sampling_ID = 1:100, auc_real_list)
+write_tsv(df_auc_real, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_real.tsv")
+```
+
+```{r}
+summary(auc_best_list)
+summary(auc_real_list)
+
+t_test_result <- t.test(auc_best_list,  auc_real_list, alternative = "greater") # one-sided
+t_test_result 
+t_test_result$p.value
+```
+# plot
+```{r}
+d1 <- tibble(simulation_ID = max_ID, auc = auc_best_list)
+d2 <- tibble(simulation_ID = 0, auc = auc_real_list)
+ggplot_auc <- rbind(d1, d2)
+#write_tsv(ggplot_auc, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/auc_ggplot.tsv")
+
+
+ggplot_auc <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/auc_ggplot.tsv")
+
+p3 <- ggplot_auc %>% ggplot(aes(x = factor(simulation_ID), y = auc, color = factor(simulation_ID))) +
+  geom_point() +
+  geom_boxplot() +
+  ylim(c(2.3, 2.9))+
+  theme(aspect.ratio = 0.2)+
+  theme_minimal()
+p3
+```
+# 100回のsimulation全てで90% sub-samplingをしてaucを保存する
+```{r}
+tgt_ctc <- "Blood"
+year_list <- 2009:2023
+auc_list <- list()
+
+# best top3 (No. 18, 11, 42)とworst top3 (No.3, 1, 37)のみ
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  print(paste0("Simulation ID : ", simu_num))
+  tgt_auc_list <- c()
+  df <- suppressMessages(read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_rand_", tgt_ctc, "_", simu_num, ".tsv")))
+  df2 <- df %>% select(-Family) %>% mutate(simu_ID = simu_num)
+  for (i in 1:100) {
+    set.seed(i)
+    sub_df2 <- df2 %>% sample_frac(size = 0.9, replace = FALSE)
+    
+    ct_plot_df <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+    num <- 1
+    rs_list <- c()
+    TF_list <- c()
+    for (tgt_year in year_list) {
+      
+      tgt_rs <- sub_df2 %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+      rs_list <- c(rs_list, tgt_rs)
+      cum_uniq_rs <- length(unique(rs_list))
+      
+      tgt_TF <- sub_df2 %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+      TF_list <- c(TF_list, tgt_TF)
+      cum_uniq_TF <- length(unique(TF_list))
+      
+      add_row <- tibble(Cell_type_class = tgt_ctc, 
+                        year = tgt_year, 
+                        cum_uniq_rs = cum_uniq_rs, 
+                        cum_uniq_TF = cum_uniq_TF)
+      ct_plot_df[num,] <- add_row
+      num <- num + 1
+    }
+    
+    total_rs_num <- length(unique(GWAS_df$SNPS))
+    
+    colnames(ct_plot_df) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+    ct_plot_df2 <- ct_plot_df %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num) %>%
+      mutate(simulation_ID = simu_num)
+    
+    auc <- trapz(ct_plot_df2$year, ct_plot_df2$GWAS_cover_ratio)
+    tgt_auc_list <- c(tgt_auc_list, auc)
+  }
+  auc_list[[simulation_ID]] <- tgt_auc_list
+  auc_tib <- tibble(simulaion_ID = rep(simu_num, 100), sub_sampling_ID = 1:100, tgt_auc_list)
+  write_tsv(auc_tib, paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_", simu_num, ".tsv"))
+}
+```
+
+```{r}
+df_join <- tibble()
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  auc_tib <- read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_", simu_num, ".tsv"))
+  if(simu_num %in% c(18, 11, 42)){
+    auc_tib <- auc_tib %>% mutate(color = "red")
+  }else{
+    auc_tib <- auc_tib %>% mutate(color = "blue")
+  }
+  if(nrow(df_join) == 0){
+    df_join <- auc_tib
+  }else{
+    df_join <- rbind(df_join, auc_tib)
+  }
+}
+colnames(df_join) <-c("simulation_ID", "sub_sampling_ID", "auc", "color")
+
+df_real <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_real.tsv")
+df_real <- df_real %>% mutate(color = "black")
+colnames(df_real) <-c("simulation_ID", "sub_sampling_ID", "auc", "color")
+df_join <- rbind(df_join, df_real)
+
+p4 <- df_join %>% 
+  ggplot(aes(x = reorder(simulation_ID, auc), y = auc, color = color)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("black", "blue", "red")) +
+  xlab("") +
+  ylab("AUC (90% sub-sampling)") +
+  theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
+          legend.position = "none",
+          legend.title = element_text(size = unit(20, "pt")),
+          legend.text = element_text(size = unit(20, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(15, "pt"), colour = "black"),
+          axis.text = element_text(size = unit(15, "pt"), colour = "black"),
+          #axis.text.x = element_blank(),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 0.4
+    ) 
+  
+p4
+
+pdf("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_comp_boxplot_0.9.pdf")
+p4
+dev.off
+
+write_tsv(df_join, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_plot_0.9.tsv")
+```
+# welchの検定
+```{r}
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  
+  real_auc <- df_join %>% filter(simulation_ID == 0) %>% .$auc
+  tgt_auc <- df_join %>% filter(simulation_ID == simu_num) %>% .$auc
+  summary(real_auc)
+  summary(tgt_auc)
+  
+  t_test_result <- t.test(tgt_auc,  real_auc, alternative = "greater") # one-sided
+  print(t_test_result )
+  print(paste0("Simulation_ID : ", simu_num, " pval : ",  t_test_result$p.value))
+  
+}
+```
+
+# 50% sub-samplingをしてaucを保存する
+```{r}
+tgt_ctc <- "Blood"
+year_list <- 2009:2023
+auc_list <- list()
+
+# best top3 (No. 18, 11, 42)とworst top3 (No.3, 1, 37)のみ
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  print(paste0("Simulation ID : ", simu_num))
+  tgt_auc_list <- c()
+  df <- suppressMessages(read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/overlap_df2_selected_rand_", tgt_ctc, "_", simu_num, ".tsv")))
+  df2 <- df %>% select(-Family) %>% mutate(simu_ID = simu_num)
+  for (i in 1:100) {
+    set.seed(i)
+    sub_df2 <- df2 %>% sample_frac(size = 0.5, replace = FALSE)
+    
+    ct_plot_df <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+    num <- 1
+    rs_list <- c()
+    TF_list <- c()
+    for (tgt_year in year_list) {
+      
+      tgt_rs <- sub_df2 %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+      rs_list <- c(rs_list, tgt_rs)
+      cum_uniq_rs <- length(unique(rs_list))
+      
+      tgt_TF <- sub_df2 %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+      TF_list <- c(TF_list, tgt_TF)
+      cum_uniq_TF <- length(unique(TF_list))
+      
+      add_row <- tibble(Cell_type_class = tgt_ctc, 
+                        year = tgt_year, 
+                        cum_uniq_rs = cum_uniq_rs, 
+                        cum_uniq_TF = cum_uniq_TF)
+      ct_plot_df[num,] <- add_row
+      num <- num + 1
+    }
+    
+    total_rs_num <- length(unique(GWAS_df$SNPS))
+    
+    colnames(ct_plot_df) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+    ct_plot_df2 <- ct_plot_df %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num) %>%
+      mutate(simulation_ID = simu_num)
+    
+    auc <- trapz(ct_plot_df2$year, ct_plot_df2$GWAS_cover_ratio)
+    tgt_auc_list <- c(tgt_auc_list, auc)
+  }
+  auc_list[[simulation_ID]] <- tgt_auc_list
+  auc_tib <- tibble(simulaion_ID = rep(simu_num, 100), sub_sampling_ID = 1:100, tgt_auc_list)
+  write_tsv(auc_tib, paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_", simu_num,"_0.5.tsv"))
+}
+```
+# real
+```{r}
+auc_real_list <- c()
+for (i in 1:100) {
+  set.seed(i)
+  sub_real_df2 <- real_df2 %>% sample_frac(size = 0.5, replace = FALSE)
+  
+  ct_plot_df_real <- data.frame(matrix(nrow = length(year_list), ncol = 4))
+  num <- 1
+  rs_list <- c()
+  TF_list <- c()
+  for (tgt_year in year_list) {
+    
+    tgt_rs <- sub_real_df2 %>% filter(year == tgt_year) %>% .$rs %>% as.character()
+    rs_list <- c(rs_list, tgt_rs)
+    cum_uniq_rs <- length(unique(rs_list))
+    
+    tgt_TF <- sub_real_df2 %>% filter(year == tgt_year) %>% .$Antigen %>% as.character()
+    TF_list <- c(TF_list, tgt_TF)
+    cum_uniq_TF <- length(unique(TF_list))
+    
+    add_row <- tibble(Cell_type_class = tgt_ctc, 
+                      year = tgt_year, 
+                      cum_uniq_rs = cum_uniq_rs, 
+                      cum_uniq_TF = cum_uniq_TF)
+    ct_plot_df_real[num,] <- add_row
+    num <- num + 1
+  }
+  
+  total_rs_num <- length(unique(GWAS_df$SNPS))
+  
+  colnames(ct_plot_df_real) <- c("Cell_type_class", "year", "cum_uniq_rs", "cum_uniq_TF")
+  ct_plot_df2_real <- ct_plot_df_real %>% mutate(GWAS_cover_ratio = cum_uniq_rs/total_rs_num) %>%
+    mutate(simulation_ID = 0)
+  
+  auc <- trapz(ct_plot_df2_real$year, ct_plot_df2_real$GWAS_cover_ratio)
+  auc_real_list <- c(auc_real_list, auc)
+}
+df_auc_real <- tibble(simulaion_ID = rep(0, 100), sub_sampling_ID = 1:100, auc_real_list)
+write_tsv(df_auc_real, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_real_0.5.tsv")
+```
+
+
+```{r}
+df_join <- tibble()
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  auc_tib <- read_tsv(paste0("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_", simu_num, "_0.5.tsv"))
+  if(simu_num %in% c(18, 11, 42)){
+    auc_tib <- auc_tib %>% mutate(color = "red")
+  }else{
+    auc_tib <- auc_tib %>% mutate(color = "blue")
+  }
+  if(nrow(df_join) == 0){
+    df_join <- auc_tib
+  }else{
+    df_join <- rbind(df_join, auc_tib)
+  }
+}
+colnames(df_join) <-c("simulation_ID", "sub_sampling_ID", "auc", "color")
+
+df_real <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_real_0.5.tsv")
+df_real <- df_real %>% mutate(color = "black")
+colnames(df_real) <-c("simulation_ID", "sub_sampling_ID", "auc", "color")
+df_join <- rbind(df_join, df_real)
+
+p5 <- df_join %>% 
+  ggplot(aes(x = reorder(simulation_ID, auc), y = auc, color = color)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("black", "blue", "red")) +
+  xlab("") +
+  ylab("AUC (50% sub-sampling)") +
+  theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
+          legend.position = "none",
+          legend.title = element_text(size = unit(20, "pt")),
+          legend.text = element_text(size = unit(20, "pt")),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+          axis.line = element_line(linewidth = unit(0.5, "pt")),
+          axis.title = element_text(size = unit(15, "pt"), colour = "black"),
+          axis.text = element_text(size = unit(15, "pt"), colour = "black"),
+          #axis.text.x = element_blank(),
+          # axis.line = element_line(colour="black"),
+          aspect.ratio = 0.4
+    ) 
+  
+p5
+
+pdf("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_comp_boxplot_0.5.pdf")
+p5
+dev.off()
+
+write_tsv(df_join, "/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_sub_sampling/auc_list_plot_0.5.tsv")
+```
+# welchの検定
+```{r}
+for (simu_num in c(18, 11, 42, 3, 1, 37)) {
+  
+  real_auc <- df_join %>% filter(simulation_ID == 0) %>% .$auc
+  tgt_auc <- df_join %>% filter(simulation_ID == simu_num) %>% .$auc
+  summary(real_auc)
+  summary(tgt_auc)
+  
+  t_test_result <- t.test(tgt_auc,  real_auc, alternative = "greater") # one-sided
+  print(t_test_result )
+  print(paste0("Simulation_ID : ", simu_num, " pval : ",  t_test_result$p.value))
+  
+}
+```
+

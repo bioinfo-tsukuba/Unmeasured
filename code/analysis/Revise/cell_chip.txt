@@ -1,0 +1,1098 @@
+ES cells
+CD4+ T cells
+HeLa
+Jurkat
+MCF-7
+hESC H1
+K-562
+NB-4
+Leukemia, Myeloid
+UPR9
+MR4
+Jurkat (Clone E6-1)
+IMR-90
+SH-SY5Y
+BJ
+GM19193
+GM18526
+GM19099
+GM15510
+GM12892
+GM10847
+GM18951
+GM12878
+GM12891
+T98G
+U2OS
+LNCAP
+VCaP
+hESC H9
+Lymphoblastoid cell line
+22Rv1
+RWPE-1
+Prostate cancer cells
+Keratinocytes
+RD
+Rh-4
+DFB
+Adipose stromal cell
+hESC BG03
+GIST48
+T-ALL
+CD34 Hematopoietic stem cells
+GM06990
+Pancreatic islets
+Erythroblasts
+Caco-2
+Hep G2
+HUVEC
+NHEK
+hESC derived neural cells
+CMK
+LN-229
+T-47D
+Ishikawa
+ECC-1
+hESC derived mesendodermal cells
+Hematopoietic Stem Cells
+Saos-2
+HMEC
+HSMM
+NHLF
+Liver
+SGBS
+T cells
+293
+NHDF
+NH-A
+Osteobl
+CD34+
+Adipocytes
+AG04449
+AG09309
+AG04450
+AG09319
+AoAF
+AG10803
+GM12801
+GM12864
+GM12865
+GM12872
+GM12873
+GM12874
+GM12875
+HA-sp
+HBMEC
+HCFaa
+HCPEpiC
+HEEpiC
+HL-60
+HMF
+HPAF
+HPF
+HRE
+HRPEpiC
+SAEC
+SK-N-SH
+WERI-Rb-1
+CD36+
+CUTLL1
+HCT 116
+THP-1
+IB4
+JURL-MK1
+PBMC
+Lymphoma, B-Cell
+H3396
+A549
+U-937
+PFSK-1
+SK-N-MC
+PANC-1
+U-87 MG
+PC-3
+Glioblastoma
+GM19239
+GM19238
+GM19240
+LY2
+FB8470
+FB0167P
+D54
+LS-180
+RAJI
+CA46
+BLUE-1
+BL-41
+RAMOS
+Heart
+C4-2
+GM12870
+GM12866
+GM12867
+GM12868
+GM12871
+GM12869
+Myoblasts
+BCBL1
+VCS2
+786-O
+MCF-7-LTED
+HCC1428-LTED
+CCRF-CEM
+RKO
+WM853
+Kasumi-1
+Acute myeloid leukemia
+P493-6
+NCI-H2171
+Multiple Myeloma
+NCI-H128
+Monocytes
+Macrophages
+MDAH087
+WM262
+WM451
+GM08714
+PBDEFetal
+MCF 10A
+NT2-D1
+PBDE
+SEM
+Lymphoblastoid cells
+RPMI 8402
+UVSS1
+BPE
+HMLE
+BPLER
+NCI-H1703
+ZR-75-1
+SW 620
+HCT-15
+HT-29
+NCI-H441
+SK-BR-3
+NCI-H838
+BT-20
+Breast cancer cells
+Colon cancer
+BT-474
+MDA-MB-453
+CD20+
+DND-41
+Monocytes-CD14+
+hESC derived neural crests
+GM20000
+GM13977
+GM10266
+GM13976
+Kidney
+Lung
+GM10248
+SKNO-1
+Acute promyelocytic leukemia
+Hematopoietic cells
+Pancreas
+Medullo
+Spleen
+NCCIT
+Forearm skin
+COLO 320
+Th1 Cells
+Th2 Cells
+RS4-11
+PrEC
+MM.1S
+MDA-MB-231
+Erythroid Cells
+HPB-ALL
+CD4+
+HuH-7
+LX2
+hESC HUES64
+B cells
+Tracheal epithelial cells
+Fetal neural progenitor cells
+GBM1-HAM
+DLD-1
+WI-38
+NAMALWA
+L-428
+NCI-H295R
+OCI-LY1
+ME-1
+LoVo
+GP5d
+Lung fibroblasts
+GM18505
+MS1
+Dermal fibroblast
+Tumour tissues
+BE(2)-C
+Endometrial stromal cells
+Hs 578T
+AGS
+Breast cancer
+hESC WA09
+Breast cells
+Hs 68
+EP156T
+LREX
+iPS cells
+KB
+KYSE-150
+Melanocytes
+COLO 829
+MDA-MB-134-VI
+DU 145
+NOMO-1
+ReN-VM
+CAL-1
+HT-1080
+AC16
+KOPT-K1
+Fibroblasts
+Mammary epithelial cells
+Treg
+iSLK
+LEC
+BEC
+BJAB
+Primary endothelial cells
+ML-2
+hTERT RPE-1
+LS-174T
+OCI-LY-3
+OCI-LY-10
+SUM 159PT
+NTERA-2
+BT-549
+Hepatocytes
+GRANTA-519
+YCC-3
+KATO III
+Neural Stem Cells
+SF7761
+BEAS-2B
+iPSC derived neural cells
+90-8TL
+SKMNC
+A-673
+CHRF-288-11
+Testis
+Adipose-Derived Mesenchymal Stem Cells
+Calu-3
+Daoy
+Prostate cancer
+Dendritic Cells
+PA-TU-8988S
+ICN12
+SW 480
+hESC derived ectodermal cells
+hESC derived endodermal cells
+451Lu
+U-2932
+Melanoma
+R1-AD1
+R1-D567
+501A
+HCASMC
+NALM-6
+CD8+ T cells
+TSU-1621MT
+Mesenchymal stem cells
+White adipose tissue
+Adipose Tissue
+SK-MEL-147
+Peripheral blood stem cells
+NCI-H526
+TC-797
+HEK293-T-REx
+NCI-H3122
+HCC1819
+NCI-H2087
+Leiomyoma
+RPTEC
+HVMF
+HAc
+HFF-Myc
+NHDF-neo
+HCM
+A-375
+HFF
+Fetal brain
+OCI-LY-7
+MKN-28
+SNU-216
+Fibrosarcoma
+M0-91
+Plasma Cells
+SUM 185PE
+HCC2157
+KYSE-70
+T.T
+HCC95
+NCI-H660
+Farage
+SU-DHL-5
+SU-DHL-6
+WSU-DLCL2
+Pfeiffer
+Aortic valve endothelial cells
+Mutu
+OCI-LY-19
+SU-DHL-10
+SU-DHL-2
+SU-DHL-4
+HuG1-N
+TIVE-LTC
+hESC HUES6
+Myotube
+Rhabdomyosarcoma
+Prostate
+NCI-H929
+hESC derived mesodermal cells
+Tumor
+Akata
+hESC derived pancreatic cells
+GM06170
+GM00011
+delta-47
+OVCAR-8
+MDA-MB-175-VII
+MDA-MB-468
+HCC70
+DOHH-2
+KARPAS-422
+ALL-SIL
+Thymus
+SF268
+H2052
+HAP1
+Pre-adipocytes
+RL95-2
+SMMC-7721
+CC-LP-1
+CWR22Pc
+MSTO-211H
+HuCCT1
+LHSAR
+NGP
+KELLY
+MOLM-14
+SET-2
+MV-4-11
+OF4155
+HEL 92.1.7
+MEG-01
+KU812
+TF-1
+WHIM12
+Caki-1
+OECM-1
+RC-K8
+HCC1954
+HCC1955
+C666-1
+MM1.RL
+HBL-1
+HT
+OCI-LY8
+TMD8
+LP-1
+HCC1395
+MDA-MB-436
+SUM 1315M02
+SUM 149PT
+UT-7
+NCI-H1299
+PDAC
+CFPAC-1
+COLO 205
+COLO 741
+Wharton Jelly
+G-401
+Kidney Cortex
+L-1236
+REH
+SUP-B15
+OVCAR-3
+OvCA 429
+PEO1
+NAMEC8
+LTED cells
+KG-1
+LAN-6
+Differentiated keratinocytes
+ZR-75-30
+hESC VAL-3
+Erythroid progenitors
+HCE-T
+Epithelium, Corneal
+Neural progenitor cells
+SK-N-BE(2)
+Endometrial Stromal Tumors
+Epidermal stem cells
+hESC WIBR3
+NCI-H2107
+NCI-H889
+NCI-H82
+NCI-H524
+FT33
+FT194
+KURAMOCHI
+OVSAHO
+JHOS-4
+MCF10DCIS.com
+HaCaT
+SK-OV-3
+BGC-823
+Osteoblasts
+L3.6
+EndoC-BH1
+GEN2.2
+BT168
+JHU-029
+BT-16
+MRT TTC549
+RCH-ACV
+CD19+ leukemic cells
+Rhabdoid Tumor
+iPSC derived cardiac cells
+Colorectal carcinoma
+RH-18
+Pre-B cell leukemia
+Memory T cells
+Cord blood mononuclear
+Bone marrow mononuclear cells
+Erythroid Precursor Cells
+HCC1806
+SUM 229PE
+GSC8
+ICN1
+Pre-B ALL
+T778
+SNU-1750
+BeWo
+D283 Med
+D341 Med
+MOLM-13
+SF8628
+Diffuse intrinsic pontine glioma
+Carcinoma, Endometrioid
+Bipolar spindle neurons
+MO1043
+U-266
+Retina
+Th17 Cells
+NHBE
+Fetal prostate fibroblasts
+Prostate cancer-associated fibroblasts
+Myofibroblasts
+Lu-130
+HCC827
+HAEC
+MDA-MB-157
+HCC1143
+Bronchial epithelial cells
+MOLT-4
+Chondrocytes
+SKH1
+CLB-Ga
+SCC-9
+Renal tubular cells
+PC-9
+Neutrophils
+NB-1643
+BL-2
+CWR-R1
+J-Lat A72
+Renal cell carcinoma
+SJSA-1
+24335
+MRC-5
+HASM2
+NCI-H358
+BEL-7402
+NCI-H69
+MKL-1
+Caput epididymis
+Neuroblastoma
+BICR 31
+CHL-1
+OCI-AML3
+Esophagus squamous epithelium
+Omental fat pad
+Adrenal Glands
+Gastrocnemius medialis
+Esophagus muscularis mucosa
+Gastroesophageal sphincter
+Colon, Transverse
+Subcutaneous adipose tissue
+Ovary
+Colon, Sigmoid
+Suprapubic skin
+Stomach
+Prostate epithelial cells
+Fetal neural cells
+Leg skin
+Body of pancreas
+Breast epithelium
+Vagina
+Peyers Patches
+Tibial Nerve
+Uterus
+Tibial Arteries
+Thyroid Gland
+Prostate gland
+Aorta
+hESC derived trophoblast cells
+SK-MEL-5
+NCI-N87
+RT-112
+Burkitt Lymphoma
+Pre-leukemia stem cells
+Foreskin
+Lung cancer
+VH10
+hES BG01V
+LAN-1
+CS1AN
+Cardiac progenitor cells
+Endothelial Cells
+hESC HUES8
+Bronchial tracheal epithelial cells
+JMSU1
+U-251 MG
+BCSC1
+IMR-5
+SK-N-AS
+NB69
+NCI-H1975
+Bone marrow nuclear cells
+Peripheral blood mononuclear cells
+SUM 44PE
+OVCAR-5
+MNNG
+143B
+MG-63
+HOS
+HBEC3-KT
+Ker-CT
+HUDEP-2
+Detroit 562
+GIST-T1
+MDA PCa 2b
+iPSC derived pancreatic cells
+RMG-I
+HS-SY-II
+A-1847
+SNU-398
+TC-32
+EWS502
+Aortic smooth muscle cells
+iPSC derived neural crests
+COLO 800
+B-CLL cells
+hESC UCLA1
+SHI-1
+HepaRG
+CD34+ cells
+MIA Paca-2
+CAL-51
+Coronary artery endothelial cells
+Aska
+SYO1
+HSSY2
+Mino
+REC-1
+SP-49
+NCI-H23
+HB1119
+SaOS-LM1
+OS-RC-2
+Loucy
+LOX-IMVI
+UO-31
+A498
+Malme-3
+NCI-H460
+UACC-62
+UACC-257
+NCI-H1048
+MCF-12A
+GM17212
+KK1
+ST1
+hESC derived retinal cells
+HEYA8
+Adenoid cystic carcinoma
+L-C-B
+SK-MEL-239
+Epididymis
+Pre-B lymphoblast cells
+NY8
+NY15
+DLBCL
+RT4
+TE-5
+C49R
+C70R
+FULR
+TAMR
+FULVR
+HCC3153
+HKC8
+RCC4
+Endometrium
+SW 1271
+HEL
+EOL-1
+SYO-1
+TTC-1240
+JB6
+SU-DHL-1
+SH-EP
+BxPC-3
+KMS-11
+Myocytes, Cardiac
+LAPC-4
+Dombi23
+Cytotrophoblast
+TT
+Endometrium cancer
+HONE-1
+Nuclear cells
+UACC-812
+iTreg
+Gastrointestinal Stromal Tumors
+RH-41
+hESC derived epidermal cells
+Mammary glands
+697
+FaDu
+Prostate cancer-derived fibroblasts
+Adipose stem cells
+MB 157
+HCC1599
+Head and neck squamous cell carcinoma
+Colorectal cancer organoid
+SGC-7901
+BIN-67
+SCCOHT-1
+Heart Ventricles
+Right atrium auricular region
+Aorta, Thoracic
+Coronary artery cells
+RWPE-2
+Large pulmonary artery endothelial cells
+LPS141
+402-91
+Localized prostate
+T HESCs
+PNT1A
+Mel270
+CHP-134
+PC-3M
+LUHMES
+12Z
+GMA24A1F
+Fallopian Tubes
+hTERT-HME1
+SCC-25
+hESC derived cardiac cells
+Pre-B cells
+ipNF05.5
+RH-4
+Colonic organoids
+Chronic myeloid leukemia
+iPSC derived cells
+ESO-26
+TC-71
+ME-180
+iPSC derived chondrocytes
+KMS-28BM
+KMS-28PE
+RPMI 8226
+Muscle, Smooth
+Skeletal myotubes
+Breast organoids
+DKO-1
+LK-2
+NCI-H520
+KNS-62
+HCC2814
+Hep 3B
+EA.hy926
+N2102Ep
+Tcam-2
+HCC1937
+CAR-T cells
+SK-N-FI
+SK-N-MM
+CHLA-90
+Glioma stem cells
+Prefrontal Cortex
+COG-N-415
+LA-N-5
+RS 411
+ALL xenograft
+SK-UT-1
+Mast Cells
+EM-3
+CTV-1
+TALL-1
+TTC1240
+DKO
+GSC23
+Myometrium
+HEC-1-A
+SW 1783
+Chondrosarcoma
+PLC/PRF/5
+AsPC-1
+SW 1990
+SMS-CTR
+MDA-MB-435
+Uterin leiomyoma
+Colon
+hESC UCLA2
+93-VU147T
+Ca Ski
+HMS001
+SCC090
+SiHa
+MKN-74
+BJ-5ta
+GM07492
+IMS-M2
+H69
+Calu-1
+HEC-1-B
+A2780
+GM06077
+GM04648
+GM04604
+Mammary gland ductal carcinoma
+Lung cancer cell line
+HPDE6
+MKPL-1
+BLaER1
+Leukemia cell line
+Coronary artery smooth muscle
+SUIT-2
+Pharynx cancer cells
+KARPAS-45
+PER-117
+Het-1A
+EC109
+Endometrial epithelial cells
+HCC1187
+MDA-MB-361
+Prostatic Neoplasms, Castration-Resistant
+SK-MEL-28
+NCI-H1963
+Glioma
+BT142
+SNB-19
+0777A
+Neurons
+HGrC1
+KGN
+Hermes 3C
+THP-6
+RH-30
+SVOG-3e
+OCM-1
+Hippocampus
+UCSD-AML1
+AMU-AML1
+Mono-Mac-6
+Hepatocellular carcinoma
+Lymphoblasts
+Anterior temporal cortex
+Limbal stem cells
+Rh-5
+SCMC
+BC-3
+JN-DSRCT-1
+Plasmablasts
+Memory B cells
+HBDEC2
+Squamous cell carcinoma
+KARPAS-299
+NCI-H1944
+GM03200
+UM-UC-1
+HPAF-II
+Bladder cancer
+Tumor-derived cell line
+SU-DIPG-IV
+KYSE-410
+Hs 746.T
+YCC-11
+HGC-27
+SNU-484
+Synoviocytes
+Melanoma cell line
+BT 245
+SU-DIPG-XIII
+G477
+SNU-16
+IMR-32
+Frontal cortex
+JM1
+KMS-27
+NCI-H508
+HARA
+HT-55
+TE-10
+RD/18
+MeT-5A
+HUDEP-1
+NCI-H2126
+NCI-H1437
+Natural Killer T-Cells
+MKL-2
+hESC derived hemogenic cells
+Hs 766T
+WT 9-12
+B-3
+Preadipocytes
+16HBE14o-
+iPSC derived hepatocytes
+iPSC derived adipocytes
+Tonsil germinal center cells
+STG195
+AB555
+SK-HEP-1
+Cardiomyocytes
+5637
+HPAEC
+KYSE-180
+HH514-16
+Lymph Nodes
+Skin fibroblasts
+UM-UC-3
+hESC WIBR2
+Esophageal squamous carcinoma cell line
+SK-LMS-1
+Cerebellum
+KBM-7
+GBM
+93T449
+MOLM-1
+Podocytes
+Acute lymphoid leukemia
+Bone Marrow Cells
+Nephrons
+Osteocytes
+HFFc6
+Mesothelial cells
+Brain
+Pancreatic progenitors
+Astrocytes
+Excitatory neuron
+COLO 320DM
+COLO 320HSR
+Mesenchymal Stromal Cells
+Pulmonary artery endothelial cells
+HK-2
+HuH-6
+CAL-120
+Colorectal cancer
+CHLA-10
+CHLA-25
+EW-1
+EW-22
+EW-24
+EW-3
+EW-7
+MHH-ES-1
+MIC
+POE
+RD-ES
+Rh1
+SK-ES-1
+TC-106
+Y79
+NCI-H209
+Mac-1
+MR42D
+M21
+DIPG7
+SU-pcGBM-2
+iPSC derived astrocytes
+CAMA-1
+Fujioka
+MKN-45
+Trophoblast stem cells
+Naive B cells
+MCF10CA1a
+Aneurysm smooth muscle cells
+Smooth muscle cells
+C-33 A
+SVts-8
+KYSE-140
+CAL 27
+R1-AD567
+Neural crest cells
+ST88-14
+J-lat 1C10
+hESC derived gut tube
+hESC derived lung cells
+hESC derived hepatic progenitor
+HSC-4
+Epithelial cells
+Osteosarcoma
+hESC Cyt49
+B-cell (CD19+)
+SNU-387
+PGCLC
+GBM8
+Fetal astrocytes
+VDH-15
+VAL
+42D
+iPSC derived hippocampal cells
+H29
+NCI-H1836
+HCI005
+KG-1a
+NTERA2-derived neural stem cells
+SNU-475
+D458
+HCCLM3
+Brain organoids
+NK-92
+DMS 53
+Glioblastoma stem cells
+HEPM
+MSK-PCa3
+MLS402
+DL-221
+SW872
+M-14
+HCB1
+HCB2
+HCB3
+HCB4
+HCB5
+DTC1
+SU-CCS-1
+Sarcoma, Clear Cell
+786-M1A
+hESC H7
+HCT-8
+J82
+GM11518
+3AA3
+Liposarcoma, Myxoid
+UM-SCC-104
+UPCI-SCC-152
+hFOB 1.19
+NC797
+Mac1
+SUP-T1
+COR-L311
+NCI-H211
+Breast luminal cells
+Breast cancer cell line
+Polycystic kidney
+Uterine epithelial cells
+Adipose-derived stem cells
+Pancreatic ductal adenocarcinoma
+Prostate adenocarcinoma
+hESC RUES1
+AC7
+RPE
+Myelomonocytic leukemia
+Oral squamous cell carcinoma
+ARP-1
+Colon cancer cell line
+THLE-2
+KP4
+Colonic mucosa
+Placenta
+Natural killer cells
+Psoas Muscles
+MONO-MAC-6
+hESC derived neuromesodermal cells
+HCI-EC-23
+CD20+ B cells
+C4-2B
+Neurofibromatosis 2
+Glioblstoma stem cell
+JIH-5
+ONS-76
+Anaplastic large cell lymphoma
+TPC-1
+GLAG-66
+L-02
+BT869
+NCI-H510
+LO2
+SC
+OCI-AML2
+PNT2
+KO52
+MYL
+PE1B
+iPSC derived endothelial cells
+iPSC derived retinal cells
+EW-8
+T265
+PT2002
+Small cell lung cancer
+Lung adenocarcinoma
+SCC-13
+T/C28a2
+MUTZ-5
+UoC-B6
+AT1
+ICN13
+B-ALL
+HMVEC
+MUTZ-3
+NCI-H446
+CNE-2
+ASPS
+FU-UR-1
+ASPS1
+CAL 62
+Dorsal lateral prefrontal cortex
+CP-A
+TIG-3
+RC43N
+HPr1-AR
+Alveolar soft part sarcoma
+rRenal tubular epithelial cells
+OPM-2
+Microglia
+T24
+Caki-2
+SV-HUC-1
+Bladder epithelial cells
+EBV-B
+RMC-2C
+P31/FUJ
+Salivary Glands
+Lu-165
+Non-small cell lung cancer
+NCI-H1993
+L1207
+SKM-1
+CRC-19
+Xenograft
+Kidney organoids
+Huh-7.5
+hESC derived osteoblasts
+CCMCL1
+OMM2.3
+92-1
+Cardiac fibroblasts
+BT67
+A-253
+JHH-7
+Hodgkins lymphoma cell line
+NA

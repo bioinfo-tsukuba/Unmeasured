@@ -1,0 +1,929 @@
+---
+title: "Unmeasured_cell_line"
+output: html_document
+date: "2025-07-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+
+```
+
+# ChIP-Atlas data (一度もchIP-seqされていないものも含む)
+```{r}
+# 1回でOK
+# df2 <- read_tsv("/Users/saeko/Unmeasured/data/Human_transcriptional_factors_Cell_2018/Supple_table_S1.tsv")
+# df2_TF <- df2 %>% filter(IsTF == "Yes")
+# length(unique(df2_TF$TF))
+# 
+# df <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/chip-atlas/SRX_date_20231004.tsv")
+# df <- df %>% arrange(year, month, day, time) %>% mutate(order = 1:nrow(df)) %>% 
+#   filter(Cell_type_class != "Unclassified" & Cell_type_class != "No description") %>%
+#   filter(Antigen != "GFP" & Antigen != "Epitope tags")
+# 
+# ChIPatlas_TF <- df$Antigen %>% unique()
+# length(ChIPatlas_TF)
+# 
+# unmeasured_TF <- setdiff(unique(df2_TF$TF), ChIPatlas_TF)
+# length(unmeasured_TF)
+# View(tibble(unmeasured_TF = unmeasured_TF))
+# 
+# # ChIP-Atlasのdfに、一度もとられていないTFの情報も追加しておく
+# add_tib <- df_unmeasured <- tibble(
+#   SRX = NA_character_,
+#   year = NA_real_,
+#   month = NA_character_,
+#   day = NA_character_,
+#   time = NA,
+#   Genome = NA_character_,
+#   Antigen_class = "TFs and others",
+#   Antigen = unmeasured_TF,
+#   Cell_type_class = NA_character_,
+#   Cell_type = NA_character_,
+#   order = NA_integer_
+# )
+# df3 <- df %>% rbind(add_tib)
+# write_tsv(df3, "/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+```
+
+```{r}
+df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv") #587の全くChIP-seqされていないTFの情報も入っている
+
+cell_chip <- df_chip$Cell_type %>% unique()
+cell_chip_tib <- tibble(cell = cell_chip)
+length(cell_chip)
+write(cell_chip, "/Users/saeko/Downloads/cell_chip.txt")
+
+tmp <- df_chip %>% select(Cell_type_class, Cell_type) %>% distinct() 
+write_tsv(tmp, "/Users/saeko/Downloads/ChIP_atlas_Ctc_ct.tsv")
+```
+# RNA expression data from Human protein atlas
+```{r}
+df_HPA1 <- read_tsv("/Users/saeko/Unmeasured/data/Human_protein_atlas/rna_celline.tsv")
+cell_HPA <- unique(df_HPA1$`Cell line`)
+cell_HPA_tib <- tibble(cell = cell_HPA)
+length(cell_HPA)
+write(cell_HPA, "/Users/saeko/Downloads/cell_HPA.txt")
+```
+```{r}
+inter_cell <- intersect(cell_HPA, cell_chip)
+length(inter_cell)
+  inter_cell_tib <- tibble(cell = inter_cell)
+```
+# 名前よせ
+```{r}
+# 必要パッケージ
+#install.packages("stringdist")
+library(stringdist)
+library(dplyr)
+
+# 正規化関数
+normalize_name <- function(x) {
+  x %>%
+    tolower() %>% #小文字化
+    gsub("[\\[\\]\\(\\)/_\\-]", " ", .) %>% #角括弧、丸括弧、スラッシュ、アンダースコア、ハイフンなど→半角スペース
+    gsub("\\+", " plus", .) %>% #"+" →" plus" 
+    gsub("\\s+", " ", .) %>% #複数の連続スペースを1つのスペースに縮約
+    trimws() #文字列の前後のスペースを除去
+}
+
+# 正規化データフレーム作成
+chip_norm <- data.frame(cell_chip = cell_chip, norm_chip = normalize_name(cell_chip), stringsAsFactors = FALSE)
+HPA_norm  <- data.frame(cell_HPA  = cell_HPA,  norm_HPA  = normalize_name(cell_HPA),  stringsAsFactors = FALSE)
+
+# 数字だけ取り出す補助関数
+extract_digits <- function(x) {
+  digits <- gsub("[^0-9]", "", x)
+  if (nchar(digits) > 0) return(digits) else return(NA)
+}
+
+
+# マッチング処理 (ChIP-Atlasを基準に、HPAのcell名と近いChIP-Atlasでのcell typeを探す)
+results <- lapply(seq_len(nrow(HPA_norm)), function(i) {
+  distances <- stringdist(HPA_norm$norm_HPA[i], chip_norm$norm_chip, method = "jw") #Jaro-Winkler距離, 低いほど類似
+  best_idx <- which.min(distances)
+  best_score <- 1 - distances[best_idx]
+  best_chip <- chip_norm$cell_chip[best_idx]
+  
+  # normalizeで一致あるいは、similarityが基準以上だったら報告, ただし、数字の不一致は除外
+  if (best_score >= 0.8 | HPA_norm$cell_HPA[i] == best_chip) {
+    digits_HPA <- extract_digits(HPA_norm$cell_HPA[i])
+    digits_chip <- extract_digits(best_chip)
+    
+    # 数字がある場合は一致している必要がある
+    if (is.na(digits_HPA) || is.na(digits_chip) || digits_HPA == digits_chip) {
+      data.frame(
+        cell_HPA = HPA_norm$cell_HPA[i],
+        suggested_cell_chip = best_chip,
+        similarity_score = round(best_score, 3),
+        normalized_match = HPA_norm$norm_HPA[i] == chip_norm$norm_chip[best_idx]
+      )
+    } else {
+      NULL  # 数字不一致なら除外
+    }
+}
+
+})
+
+# 出力：正規化による一致を含める
+match_table <- do.call(rbind, results)
+print(match_table)
+dim(match_table)
+View(match_table)
+
+write_tsv(match_table, "/Users/saeko/Unmeasured/data/Human_protein_atlas/ChIPatlas_HPA_cell_match_thre0.8.tsv")
+```
+
+
+# 手動で調整したcell line対応表を使って、cell lineごとに発現/非発現を定義
+```{r}
+match_table2 <- read_csv("/Users/saeko/Unmeasured/data/Human_protein_atlas/ChIPatlas_HPA_cell_match_thre0.8_manual.csv")
+match_table2 %>% dim()
+colnames(match_table2) <- c("cell_HPA", "Cell_type", "similarity_score", "normalized_match")
+```
+
+```{r}
+mt_RNA4 <- read_tsv("/Users/saeko/Unmeasured/data/Human_protein_atlas/rna_celline.tsv")
+colnames(mt_RNA4) <- c("Gene", "Gene_name", "cell_HPA", "TPM", "pTPM", "nTPM")
+df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv") #587の全くChIP-seqされていないTFの情報も入っている, 合計2395TFs
+
+tgt_TFs <- df_chip$Antigen %>% unique()
+tgt_cell_HPA <- match_table2$cell_HPA %>% unique()
+mt_RNA4.2 <- mt_RNA4 %>% filter(cell_HPA %in% tgt_cell_HPA) %>% 
+  filter(Gene_name %in% tgt_TFs) %>%
+  left_join(match_table2, by = "cell_HPA") %>% drop_na(TPM)
+length(unique(mt_RNA4.2$cell_HPA))
+length(unique(mt_RNA4.2$Gene_name)) #-> 2309TFs
+```
+
+```{r fig.width=20, fig.height=20}
+library(patchwork)
+
+# Cell typeごとに、TFの発現量をhistgramで作っておく。
+min_nTPM <- min(mt_RNA4.2$nTPM)
+max_nTPM <- max(mt_RNA4.2$nTPM)
+
+p_list <- list()
+j <- 1
+for (i in 1:24) {
+  p <- mt_RNA4.2 %>%
+    filter(Gene_name %in% tgt_TFs[j:(j+9)]) %>%
+    ggplot(aes(x = nTPM)) +
+    geom_histogram(bins = 50) +
+    facet_wrap(~ Gene_name, scales = "free_x", nrow = 1) +
+    theme_minimal() +
+    labs(x = "nTPM", y = "Count") +
+    theme(
+      strip.text = element_text(size = 10),
+      axis.text.y = element_text(size = 6),
+      axis.text.x = element_blank(),
+      aspect.ratio = 1.8,
+      legend.position = "none"
+    )+
+    coord_flip()
+  j <- i*10 + 1
+  p_list[[i]] <-  p
+}
+
+p_list[[1]] / p_list[[2]] / p_list[[3]]/p_list[[4]]/p_list[[5]]/p_list[[6]]/p_list[[7]]/p_list[[8]]/p_list[[9]]/p_list[[10]]
+p_list[[11]] / p_list[[12]] / p_list[[13]]/p_list[[14]]/p_list[[15]]/p_list[[16]]/p_list[[17]]/p_list[[18]]/p_list[[19]]/p_list[[20]]
+p_list[[21]] / p_list[[22]] / p_list[[23]]/p_list[[24]]
+
+```
+
+
+```{r}
+# Unmeasured(%)の計算
+# FPKM細胞ごとに上位25% or 50%であるTF-CTの組み合わせをcount
+inter_cell_type <- intersect(df_chip$Cell_type, mt_RNA4.2$Cell_type)
+inter_TF <- intersect(df_chip$Antigen, mt_RNA4.2$Gene_name)
+length(inter_TF)
+
+mt_Chip <- df_chip %>% filter(Cell_type %in% inter_cell_type | Antigen %in% inter_TF) %>%
+  select(Antigen, Cell_type) %>% 
+  group_by(Antigen, Cell_type) %>% 
+  summarise(n_sample = n()) %>% 
+  pivot_wider(names_from = Cell_type, values_from = n_sample)
+row_Chip <- mt_Chip$Antigen
+mt_Chip_ct <- mt_Chip %>% ungroup() %>% select(-Antigen) %>% as.matrix()
+rownames(mt_Chip_ct) <- row_Chip
+mt_Chip_ct[is.na(mt_Chip_ct)] <- 0
+dim(mt_Chip_ct)
+saveRDS(mt_Chip_ct, "/Users/saeko/Unmeasured/data/mt_Chip_ct.rds")
+
+mt_RNA4.3 <- mt_RNA4.2 %>% filter(Cell_type %in% inter_cell_type | Gene_name %in% inter_TF) %>%
+  select(Gene_name, Cell_type, nTPM) %>%
+  drop_na(Cell_type, nTPM) %>%
+  group_by(Gene_name, Cell_type) %>%
+  summarise(nTPM = mean(nTPM, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = Cell_type, values_from = nTPM)
+row_RNA4.3 <- mt_RNA4.3$Gene_name
+mt_RNA4.3_ct <- mt_RNA4.3 %>% ungroup() %>% select(-Gene_name) %>% as.matrix()
+rownames(mt_RNA4.3_ct) <- row_RNA4.3
+mt_RNA4.3_ct[is.na(mt_RNA4.3_ct)]  <- 0
+saveRDS(mt_RNA4.3_ct, "/Users/saeko/Unmeasured/data/mt_RNA4.3_ct_HPA.rds")
+
+tgt_threshold <- 0.25
+mt_totalTF <- matrix(nrow = nrow(mt_Chip_ct), ncol = ncol(mt_Chip_ct))
+for (i in 1:nrow(mt_Chip_ct)) {
+  for (j in 1:ncol(mt_Chip_ct)) {
+    
+    tgt_TF <- rownames(mt_Chip_ct)[i]
+    tgt_tissue <- colnames(mt_Chip_ct)[j]
+    threshold <- quantile(mt_RNA4.3_ct[, tgt_tissue], 1-tgt_threshold) 
+    #threshold <- quantile(mt_RNA2[, j], tgt_threshold) #第三四分位数を求める
+    if(tgt_TF %in% rownames(mt_RNA4.3_ct)){
+      tgt_RNA <- mt_RNA4.3_ct[tgt_TF,tgt_tissue]
+      
+      if(tgt_RNA >= threshold){
+        mt_totalTF[i,j] <- 1
+      }else{
+        mt_totalTF[i,j] <- 0
+      }
+    }
+  }
+}
+rownames(mt_totalTF) <- rownames(mt_Chip_ct)
+colnames(mt_totalTF) <- colnames(mt_Chip_ct)
+saveRDS(mt_totalTF, paste0("/Users/saeko/Unmeasured/data/mt_total_expressed_TF_ct",tgt_threshold,"_v1.rds"))
+
+mt_totalTF %>% as_tibble() %>%
+  mutate(Antigen = rownames(mt_totalTF)) %>%
+  pivot_longer(-Antigen, names_to = "Cell_type", values_to = "expressed_TF") %>%
+  ggplot(aes(x = reorder(Cell_type, -expressed_TF), y = reorder(Antigen, -expressed_TF), fill = factor(expressed_TF))) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "orange")) +
+  labs(
+    title = "Expressed TFs across cell types",
+    x = "Cell Type",
+    y = "Antigen (TF)",
+    fill = "# expressed TFs"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+
+
+```{r}
+mt_totalTF_unmeasured <- matrix(nrow = nrow(mt_Chip_ct), ncol = ncol(mt_Chip_ct))
+for (i in 1:nrow(mt_Chip_ct)) {
+  for (j in 1:ncol(mt_Chip_ct)) {
+    
+    tgt_TF <- rownames(mt_Chip_ct)[i]
+    tgt_ct <- colnames(mt_Chip_ct)[j]
+    
+    if(tgt_TF %in% rownames(mt_totalTF)){
+      tgt_RNA <- mt_totalTF[tgt_TF,tgt_ct]
+      tgt_chip <- mt_Chip_ct[tgt_TF,tgt_ct]
+      
+      if(tgt_RNA == 1 & tgt_chip == 0){
+        mt_totalTF_unmeasured[i,j] <- 1
+      }else{
+        mt_totalTF_unmeasured[i,j] <- 0
+      }
+    }
+  }
+}
+rownames(mt_totalTF_unmeasured) <- rownames(mt_Chip_ct)
+colnames(mt_totalTF_unmeasured) <- colnames(mt_Chip_ct)
+saveRDS(mt_totalTF_unmeasured, paste0("/Users/saeko/Unmeasured/data/mt_total_unmeasured_TF_ct",tgt_threshold,"_v1.rds"))
+```
+
+
+# unmeasuredの統計量など
+```{r}
+dim(mt_totalTF_unmeasured)
+mt_unmeasured_numeric <- as.data.frame(lapply(mt_totalTF_unmeasured, as.numeric))
+total_zeros <- sum(mt_unmeasured_numeric == 0, na.rm = TRUE)
+total_ones  <- sum(mt_unmeasured_numeric == 1, na.rm = TRUE)
+cat("Total 0s:", total_zeros, "\n")
+cat("Total 1s:", total_ones, "\n")
+```
+
+# plot
+```{r}
+tgt_threshold <- 0.25
+mt_totalTF_unmeasured <- readRDS(paste0("/Users/saeko/Unmeasured/data/mt_total_unmeasured_TF_ct",tgt_threshold,"_v1.rds"))
+mt_Chip_ct <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip_ct.rds")
+
+rownames_TF_chip <- rownames(mt_Chip_ct)
+mt_Chip_ct_tib <- mt_Chip_ct %>% as_tibble() %>% mutate(Antigen = rownames_TF_chip) %>%
+    pivot_longer(-c(Antigen), names_to = "Cell_type", values_to = "num_ChIPseq") 
+
+rownames_total_TF_unmeasured <- rownames(mt_totalTF_unmeasured)
+mt_totalTF_unmeasured_tib <- mt_totalTF_unmeasured %>% as_tibble() %>% mutate(Antigen = rownames_total_TF) %>%
+  pivot_longer(-c(Antigen), names_to = "Cell_type", values_to = "unmeasured_TF") 
+
+tib_plot <-  mt_totalTF_unmeasured_tib %>% left_join(mt_Chip_ct_tib, by = c("Antigen", "Cell_type")) 
+tib_plot %>%
+  ggplot(aes(x = reorder(Cell_type, -unmeasured_TF), y = reorder(Antigen, -unmeasured_TF), fill = factor(unmeasured_TF))) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "blue")) +
+  labs(
+    title = "Unmeasured TFs across cell types",
+    x = "Cell Type",
+    y = "Antigen (TF)",
+    fill = "# Unmeasured TFs"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+# Family, Cell type classごとにDotplot
+```{r}
+annotation <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+annotation_Ctc <- annotation %>% select(Cell_type_class, Cell_type) %>% distinct()
+
+annotation_Family <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/data/Fig2/obj/df_fam.rds")
+annotation_Family <- annotation_Family %>% select(Antigen, Family) %>% distinct()
+
+mt_totalTF <- readRDS(paste0("/Users/saeko/Unmeasured/data/mt_total_expressed_TF_ct",tgt_threshold,"_v1.rds"))
+rowname_mt_totalTF <- rownames(mt_totalTF)
+mt_totalTF_tib <- mt_totalTF %>% as_tibble() %>% mutate(Antigen = rowname_mt_totalTF) %>%
+  pivot_longer(-Antigen, names_to = "Cell_type", values_to = "expressed_TF") 
+
+tib_plot2 <- tib_plot %>% left_join(annotation_Ctc, by = c("Cell_type")) %>%
+  left_join(annotation_Family, by = "Antigen") %>%
+  left_join(mt_totalTF_tib, by = c("Antigen", "Cell_type")) %>%
+  filter(is.na(unmeasured_TF) == FALSE) 
+dim(tib_plot)
+dim(tib_plot2)
+saveRDS(tib_plot2, "/Users/saeko/Unmeasured/data/tib_plot2_HPA.rds")
+```
+
+```{r fig.width=20, fig.height=10}
+# Cell type classごとにplot
+tib_plot_Ctc <- tib_plot2 %>% 
+  select(Antigen, Cell_type, expressed_TF, unmeasured_TF, num_ChIPseq, Cell_type_class) %>%
+  group_by(Cell_type_class) %>%
+  summarise(
+    n = n(),
+    total_expressed_TF_Ctc = sum(expressed_TF),
+    total_measured_ChIPseq = sum(num_ChIPseq),
+    total_unmeasured_TF_num_Ctc = sum(unmeasured_TF)
+  ) %>%
+  mutate(unmeasured_ratio = total_unmeasured_TF_num_Ctc / total_expressed_TF_Ctc) 
+  
+View(tib_plot_Ctc)
+
+tib_plot_Ctc2 <- tib_plot_Ctc %>% mutate(Unmeasured_percentage = (unmeasured_ratio*100)) %>%
+  mutate(Measured_percentage = 100 - Unmeasured_percentage) %>% 
+  pivot_longer(-c(Cell_type_class, n, total_expressed_TF_Ctc, total_measured_ChIPseq, total_unmeasured_TF_num_Ctc, unmeasured_ratio), names_to = "measure", values_to = "percentage")
+
+tib_plot_Ctc2 %>%
+  ggplot(aes(x = reorder(Cell_type_class, -percentage), y = percentage, fill = measure, label = round(percentage))) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(y = 110)) +
+  xlab("Cell type class (tissue)")+
+  ylab("Unmeasured(%)")+
+  scale_fill_manual(values = c("gray", "blue3")) +
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        legend.position = c(0.5, 1.1),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold", color = "black"),
+        axis.text.x =element_text(size=20,face="bold", color = "black", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold", color = "black"),
+        axis.title=element_text(size=20,face="bold", color = "black"),
+        aspect.ratio = 0.5
+  )
+```
+
+
+```{r fig.width=20, fig.height=14}
+# Family - Cell type classごとにDot plot
+tib_plot3 <-  tib_plot2 %>% 
+  filter(is.na(Family) == FALSE & Family != "No_annotation") %>%
+  group_by(Family, Cell_type_class) %>%
+  summarise(
+    total_expressed_TF = sum(expressed_TF, na.rm = TRUE),
+    total_measured_ChIPseq = sum(num_ChIPseq, na.rm = TRUE),
+    total_unmeasured_TF = sum(unmeasured_TF, na.rm = TRUE),
+    ratio_unmeasured = total_unmeasured_TF/total_expressed_TF
+  )
+saveRDS(tib_plot3, "/Users/saeko/Unmeasured/data/tib_plot3_HPA.rds")
+
+p <- tib_plot3 %>% 
+  ggplot(aes(x = reorder(Family, -total_unmeasured_TF), y= reorder(Cell_type_class, total_unmeasured_TF), size = ratio_unmeasured, label = total_unmeasured_TF)) + 
+  geom_point(aes(color = ratio_unmeasured)) +
+  geom_text(color = "white", size = 2) +
+  #scale_color_gradientn(colours = viridis::viridis(20), limits = c(0,max(tib_plot$ratio_unmeasured)), oob = scales::squish) +
+  scale_color_gradientn(
+    #colours = c("blue", "white",  "red"),  # お好みの色ベクトル
+    colours = c("white",  "blue"),
+    limits = c(0, max(tib_plot3$ratio_unmeasured)), 
+    oob = scales::squish
+  )+
+  xlab("TF family") +
+  ylab("Cell type class") +
+  theme(
+    aspect.ratio = 0.8,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+    axis.line = element_blank(), # element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(15, "pt")),
+    axis.text.x = element_text(size= unit(15, "pt"), color = "black", angle = 90, hjust = 1),
+    axis.text.y = element_text(size= unit(15, "pt"), color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA))
+
+p
+
+pdf("/Users/saeko/Unmeasured/plot/Dotplot_TFfam_Ctc_cellline_unmeasured_HPA.pdf", width = 30, height = 15)
+plot(p)
+dev.off()
+```
+# TF ごとに、expressed TF-Cell type pairをstep-miner法で定義する
+```{r}
+mt_RNA4.3_ct <- readRDS("/Users/saeko/Unmeasured/data/mt_RNA4.3_ct_HPA.rds")
+mt_RNA4.3_ct[1:5, 1:5]
+mt_RNA4.3_ct[1,] 
+
+rowname_mt_RNA4.3_ct <- rownames(mt_RNA4.3_ct)
+mt_RNA4.3_ct_tib <- mt_RNA4.3_ct %>% as_tibble() %>% mutate(Antigen = rowname_mt_RNA4.3_ct ) %>%
+  pivot_longer(-Antigen, names_to = "Cell_type", values_to = "nTPM")
+```
+
+# StepMiner関数の定義
+```{r}
+stepminer_binary <- function(values, resolution = 1) {
+  values_sorted <- sort(values)
+  n <- length(values_sorted)
+
+  # 値の範囲を整数で指定
+  threshold_candidates <- seq(floor(min(values_sorted)), ceiling(max(values_sorted)), by = resolution)
+
+  best_error <- Inf
+  best_threshold <- NA
+
+  for (i in threshold_candidates) {
+    left <- values_sorted[values_sorted <= i]
+    right <- values_sorted[values_sorted > i]
+
+    # 両側にデータが最低1個以上必要
+    if (length(left) == 0 || length(right) == 0) next
+
+    j <- mean(left) #定数関数のy値 (jは区間の平均と等しい)
+    k <- mean(right) #定数関数のy値 (kは区間の平均と等しい)
+
+    error_left <- sum((left - j)^2) #二乗誤差
+    error_right <- sum((right - k)^2) #二乗誤差
+
+    total_error <- error_left + error_right
+
+    if (total_error < best_error) {
+      best_error <- total_error
+      best_threshold <- i
+    }
+  }
+
+  # 最終的な分類
+  binary <- ifelse(values >= best_threshold, 1, 0)
+
+  return(list(threshold = best_threshold, binary = binary))
+}
+
+```
+
+# 適用してplot
+```{r}
+stepminer_all <- mt_RNA4.3_ct_tib %>%
+  group_by(Antigen) %>%
+  group_modify(~ {
+    res <- stepminer_binary(.x$nTPM)
+    .x %>%
+      mutate(StepMiner_binary = res$binary,
+             StepMiner_threshold = res$threshold)
+  }) %>%
+  ungroup()
+write_tsv(stepminer_all, "/Users/saeko/Unmeasured/data/RNA_expression_HPA_stepminer_all_res.tsv")
+```
+
+```{r}
+stepminer_all <- read_tsv("/Users/saeko/Unmeasured/data/RNA_expression_HPA_stepminer_all_res.tsv")
+TF_lists <- stepminer_all$Antigen %>% unique()
+p_list <- list()
+for (i in 1:length(TF_lists)) {
+  tgt_TF <- TF_lists[i]
+  tgt_result <- stepminer_all %>% filter(Antigen == tgt_TF)
+  
+  p <- tgt_result %>%
+    ggplot(aes(x = nTPM, fill = factor(StepMiner_binary))) +
+    geom_histogram(bins = 50) +
+    geom_vline(xintercept = tgt_result$StepMiner_threshold, color = "black", linetype = "dashed", size = 0.1) +
+    scale_fill_manual(values = c("blue", "red"), labels = c("Low", "High(expressed)")) +
+    labs(x = "nTPM", y = "Count", fill = "StepMiner\nBinary") +
+    ggtitle(paste0(tgt_TF, ": nTPM across cell types")) +
+    #theme_minimal() +
+    theme(legend.position = "none",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.ticks = element_line(size = 0.1),
+          axis.text = element_text(size=2, color = "black"),
+          axis.title = element_text(size=2, color = "black"),
+          plot.title = element_text(size = 2, hjust = 0.5))
+  
+  p_list[[i]] <- p
+}
+
+
+n_per_plot <- 80
+n_total <- length(p_list)
+n_groups <- ceiling(n_total / n_per_plot)
+
+# 結合と描画（または ggsave）
+for (g in 1:n_groups) {
+  idx_start <- (g - 1) * n_per_plot + 1
+  idx_end <- min(g * n_per_plot, n_total)
+  
+  p_group <- wrap_plots(p_list[idx_start:idx_end], ncol = 8) +
+    plot_annotation(title = paste("TFs", idx_start, "to", idx_end))
+  
+  pdf(paste0("/Users/saeko/Unmeasured/plot/Expressed_TF_HPA_stepMiner/expressed_TF_across_Ct_", g, ".pdf"))
+  print(p_group)
+  dev.off()
+}
+```
+# TF marker check
+```{r}
+# TF markerの発現値をplotに追加
+TF_marker <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/TFmarker/All_TFmarkers_annotated.tsv")
+length(unique(TF_marker$Gene_Name))
+colnames(TF_marker) <- c("PMID", "TF", "Gene_type", "Cell_Name", "Cell_Type", "Cell_type_class")
+
+marker_TF_list <- TF_marker %>% filter(Gene_type == "TFMarker") %>% .$TF %>% unique()
+length(marker_TF_list)
+
+# Cell type classもstepminer_allに追加
+df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+join_Ctc <- df_chip %>% select(Cell_type, Cell_type_class) %>% distinct()
+stepminer_all_Ctc <- stepminer_all %>% left_join(join_Ctc, by = "Cell_type") %>% drop_na(Cell_type_class)
+
+p_list <- list()
+expTF_ratio_df <- tibble()
+for (i in 1:length(marker_TF_list)) {
+  tgt_marker_TF <- marker_TF_list[i]
+  tgt_Ctc <- TF_marker %>% filter(Gene_type == "TFMarker" & TF == tgt_marker_TF) %>% .$Cell_type_class
+  tgt_df <- stepminer_all_Ctc %>% filter(Antigen == tgt_marker_TF) %>%
+    mutate(marker = ifelse(Cell_type_class %in% tgt_Ctc, "marker", "non marker"))
+  if(nrow(tgt_df) != 0 & length(unique(tgt_df$marker)) > 1){
+    if(nrow(expTF_ratio_df) == 0){
+      expTF_ratio_df <- tgt_df
+    }else{
+      expTF_ratio_df <- rbind(expTF_ratio_df, tgt_df)
+    }
+    p <- tgt_df %>% 
+      ggplot(aes(x = nTPM, fill = factor(StepMiner_binary))) +
+      geom_histogram(bins = 50) +
+      geom_vline(xintercept = tgt_df$StepMiner_threshold, color = "black", linetype = "dashed", size = 0.1) +
+      scale_fill_manual(values = c("blue", "red"), labels = c("Low", "High(expressed)")) +
+      labs(x = "nTPM", y = "Count", fill = "StepMiner\nBinary") +
+      ggtitle(paste0(tgt_marker_TF, ", Cell type class of TF marker : ", tgt_Ctc)) +
+      theme(legend.position = "none",
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.ticks = element_line(size = 0.1),
+            axis.text = element_text(size=2, color = "black"),
+            axis.title = element_text(size=2, color = "black"),
+            plot.title = element_text(size = 2, hjust = 0.5),
+            strip.text = element_text(size = 2),
+            strip.background = element_blank())+
+      facet_wrap(. ~ marker, ncol = 1, scales = "fixed")
+    #print(tgt_marker_TF)
+    #plot(p)
+    p_list[[tgt_marker_TF]] <- p
+  }
+}
+
+n_per_plot <- 20
+n_total <- length(p_list)
+n_groups <- ceiling(n_total / n_per_plot)
+
+# 結合と描画（または ggsave）
+for (g in 1:n_groups) {
+  idx_start <- (g - 1) * n_per_plot + 1
+  idx_end <- min(g * n_per_plot, n_total)
+  
+  p_group <- wrap_plots(p_list[idx_start:idx_end], ncol = 4) +
+    plot_annotation(title = paste("TFs", idx_start, "to", idx_end))
+  
+  pdf(paste0("/Users/saeko/Unmeasured/plot/Expressed_TF_HPA_stepMiner_marker/expressed_TF_across_Ct_", g, ".pdf"))
+  print(p_group)
+  dev.off()
+}
+
+```
+# TF marker と non-TF markerでexpressed TFとなったTFの割合を比較
+```{r fig.width=25, fig.height=10}
+expTF_ratio_df2 <- expTF_ratio_df %>% 
+  group_by(Antigen, marker) %>% 
+  summarise(n_marker = sum(marker == "marker"),
+            n_non_marker = sum(marker == "non marker"),
+            marker_expressed = sum(marker == "marker" & StepMiner_binary == 1),
+            non_marker_expressed = sum(marker == "non marker" & StepMiner_binary == 1),
+            marker_ratio = ifelse(n_marker > 0, marker_expressed / n_marker, NA_real_),
+            non_marker_ratio = ifelse(n_non_marker > 0, non_marker_expressed / n_non_marker, NA_real_)) %>%
+  mutate(ratio = coalesce(marker_ratio, non_marker_ratio)) %>% #coalesceはNAでない方の数値を返す
+  ungroup()
+
+expTF_ratio_df2 %>% ggplot(aes(x = Antigen, y = ratio, fill = marker)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Ratio of expressed TFs (stepMiner)",
+       y = "ratio", x = "Antigen") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+```{r}
+library(ggpubr)
+expTF_ratio_df2 %>% ggplot(aes(x = marker, y = ratio, fill=marker)) +
+  geom_violin()+
+  geom_jitter() +
+  stat_compare_means(method = "wilcox.test", 
+                     comparisons = list(c("marker", "non marker")),
+                     label = "p.signif") + 
+  theme_minimal() +
+  theme(aspect.ratio = 1.5)
+
+```
+
+
+```{r}
+# TF markerをCell typeごとにcheck
+TFmarker_Ct <- read_csv("/Users/saeko/Unmeasured/data/TFmarker/PMID_Cell_type_joined_extracted1.csv")
+
+for (i in 1:nrow(TFmarker_Ct)) {
+  tgt_TF <- TFmarker_Ct[i, "TF"] %>% as.character()
+  tgt_Ct <- TFmarker_Ct[i, "Matched_Cell_Lines"] %>% as.character()
+  tgt_df <- stepminer_all %>% filter(Antigen == tgt_TF) %>%
+    mutate(marker = ifelse(Cell_type == tgt_Ct, "marker", "non marker"))
+  tgt_marker_nTPM <- tgt_df %>% filter(Cell_type == tgt_Ct) %>% .$nTPM
+  p <- tgt_df %>% 
+      ggplot(aes(x = nTPM, fill = factor(StepMiner_binary))) +
+      geom_histogram(bins = 50) +
+      geom_vline(xintercept = tgt_df$StepMiner_threshold, color = "black", linetype = "dashed", size = 0.1) +
+      geom_vline(xintercept = tgt_marker_nTPM, color = "green", linetype = "dashed", size = 0.5) +
+      scale_fill_manual(values = c("blue", "red"), labels = c("Low", "High(expressed)")) +
+      labs(x = "nTPM", y = "Count", fill = "StepMiner\nBinary") +
+      ggtitle(paste0(tgt_marker_TF, ", Cell type class of TF marker : ", tgt_Ctc)) +
+      theme(legend.position = "none",
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(), 
+            axis.ticks = element_line(size = 0.1),
+            axis.text = element_text(size=2, color = "black"),
+            axis.title = element_text(size=2, color = "black"),
+            plot.title = element_text(size = 2, hjust = 0.5),
+            strip.text = element_text(size = 2),
+            strip.background = element_blank())
+  plot(p)
+  print(tgt_marker_nTPM)
+}
+```
+
+
+# TFごとに発現しているCell typeを決めて、unmeasuredを計算
+```{r}
+stepminer_all <- read_tsv("/Users/saeko/Unmeasured/data/RNA_expression_HPA_stepminer_all_res.tsv")
+length(unique(stepminer_all$Antigen))
+length(unique(stepminer_all$Cell_type))
+mat_stepminer_expression <- stepminer_all %>% select(Antigen, Cell_type, StepMiner_binary) %>%
+  pivot_wider(names_from = "Cell_type", values_from = "StepMiner_binary")
+row_stepminer <- mat_stepminer_expression$Antigen
+mat_stepminer_expression2 <- mat_stepminer_expression %>% select(-Antigen) %>% as.matrix()
+rownames(mat_stepminer_expression2) <- row_stepminer
+dim(mat_stepminer_expression2)
+saveRDS(mat_stepminer_expression2, "/Users/saeko/Unmeasured/data/mat_stepminer_expression_binary.rds")
+```
+
+```{r}
+stepminer_all %>% drop_na(StepMiner_binary) %>%
+  ggplot(aes(x = reorder(Cell_type, StepMiner_binary), y = reorder(Antigen, -StepMiner_binary), fill = factor(StepMiner_binary))) +
+  geom_tile() +
+  scale_fill_manual(values = c("blue", "red")) +
+  labs(
+    title = "Expressed TFs across cell types",
+    x = "Cell Type",
+    y = "Antigen (TF)",
+    fill = "# expressed TFs"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+```{r}
+# どのCell typeでも発現していると判定されたTFたち
+stepminer_all %>% group_by(Antigen) %>% summarise(all_ones = all(StepMiner_binary == 1)) %>%
+  filter(all_ones) %>%
+  pull(Antigen) -> tmp_genes
+
+stepminer_all %>% filter(Antigen %in% tmp_genes) %>% .$nTPM %>% summary()
+stepminer_all %>% filter(Antigen %in% tmp_genes) %>% .$nTPM %>% hist(breaks = 50)
+```
+
+
+```{r}
+mt_Chip_ct <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip_ct.rds")
+mat_stepminer_expression2 <- readRDS("/Users/saeko/Unmeasured/data/mat_stepminer_expression_binary.rds")
+
+mt_stepMiner_unmeasured <- matrix(nrow = nrow(mt_Chip_ct), ncol = ncol(mt_Chip_ct))
+for (i in 1:nrow(mt_Chip_ct)) {
+  for (j in 1:ncol(mt_Chip_ct)) {
+    
+    tgt_TF <- rownames(mt_Chip_ct)[i]
+    tgt_ct <- colnames(mt_Chip_ct)[j]
+    
+    if(tgt_TF %in% rownames(mat_stepminer_expression2)){
+      tgt_RNA <- mat_stepminer_expression2[tgt_TF,tgt_ct]
+      tgt_chip <- mt_Chip_ct[tgt_TF,tgt_ct]
+      
+      if(tgt_RNA == 1 & tgt_chip == 0){
+        mt_stepMiner_unmeasured[i,j] <- 1
+      }else{
+        mt_stepMiner_unmeasured[i,j] <- 0
+      }
+    }
+  }
+}
+rownames(mt_stepMiner_unmeasured) <- rownames(mt_Chip_ct)
+colnames(mt_stepMiner_unmeasured) <- colnames(mt_Chip_ct)
+saveRDS(mt_stepMiner_unmeasured, paste0("/Users/saeko/Unmeasured/data/mt_stepMiner_unmeasured_TF_ct_v1.rds"))
+```
+
+```{r}
+mt_stepMiner_unmeasured <- readRDS("/Users/saeko/Unmeasured/data/mt_stepMiner_unmeasured_TF_ct_v1.rds")
+mt_Chip_ct <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip_ct.rds")
+
+rownames_TF_chip <- rownames(mt_Chip_ct)
+mt_Chip_ct_tib <- mt_Chip_ct %>% as_tibble() %>% mutate(Antigen = rownames_TF_chip) %>%
+    pivot_longer(-c(Antigen), names_to = "Cell_type", values_to = "num_ChIPseq") 
+
+rownames_stepMiner_TF_unmeasured <- rownames(mt_stepMiner_unmeasured)
+mt_stepMiner_unmeasured_tib <- mt_stepMiner_unmeasured %>% as_tibble() %>% mutate(Antigen = rownames_stepMiner_TF_unmeasured) %>%
+  pivot_longer(-c(Antigen), names_to = "Cell_type", values_to = "unmeasured_TF") 
+
+tib_plot <-  mt_stepMiner_unmeasured_tib %>% left_join(mt_Chip_ct_tib, by = c("Antigen", "Cell_type")) 
+tib_plot %>%
+  ggplot(aes(x = reorder(Cell_type, -unmeasured_TF), y = reorder(Antigen, -unmeasured_TF), fill = factor(unmeasured_TF))) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "blue")) +
+  labs(
+    title = "Unmeasured TFs across cell types",
+    x = "Cell Type",
+    y = "Antigen (TF)",
+    fill = "# Unmeasured TFs"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank()
+  )
+```
+```{r fig.width=20, fig.height=10}
+# Cell type classごとに%unmeasuredを計算
+add_expressed_TF <- stepminer_all %>% select(Antigen, Cell_type, StepMiner_binary)
+colnames(add_expressed_TF) <- c("Antigen", "Cell_type", "expressed_TF")
+df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+join_Ctc <- df_chip %>% select(Cell_type, Cell_type_class) %>% distinct()
+
+tib_plot_Ctc <- tib_plot %>% 
+  left_join(add_expressed_TF, by = c("Antigen", "Cell_type")) %>% 
+  left_join(join_Ctc, by = "Cell_type") %>%
+  select(Antigen, Cell_type, expressed_TF, unmeasured_TF, num_ChIPseq, Cell_type_class) %>%
+  group_by(Cell_type_class) %>%
+  summarise(
+    n = n(), #Antigen-Celltype pair, Ctcによって、含まれるCell typeの数が異なるので、nの数も異なる。Cell typeにつき1444TFあるので、nの数は1444の倍数になる
+    total_expressed_TF_Ctc = sum(expressed_TF), # TFごとにStepMiner法で決めたexpressed TF, 
+    total_measured_ChIPseq = sum(num_ChIPseq),
+    total_unmeasured_TF_num_Ctc = sum(unmeasured_TF)
+  ) %>%
+  mutate(unmeasured_ratio = total_unmeasured_TF_num_Ctc / total_expressed_TF_Ctc) 
+  
+View(tib_plot_Ctc)
+
+tib_plot_Ctc2 <- tib_plot_Ctc %>% mutate(Unmeasured_percentage = (unmeasured_ratio*100)) %>%
+  mutate(Measured_percentage = 100 - Unmeasured_percentage) %>% 
+  pivot_longer(-c(Cell_type_class, n, total_expressed_TF_Ctc, total_measured_ChIPseq, total_unmeasured_TF_num_Ctc, unmeasured_ratio), names_to = "measure", values_to = "percentage")
+
+tib_plot_Ctc2 %>%
+  ggplot(aes(x = reorder(Cell_type_class, -percentage), y = percentage, fill = measure, label = round(percentage))) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(y = 110)) +
+  xlab("Cell type class (tissue)")+
+  ylab("Unmeasured(%)")+
+  scale_fill_manual(values = c("gray", "blue3")) +
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        legend.position = c(0.5, 1.1),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold", color = "black"),
+        axis.text.x =element_text(size=20,face="bold", color = "black", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold", color = "black"),
+        axis.title=element_text(size=20,face="bold", color = "black"),
+        aspect.ratio = 0.5
+  )
+```
+# Dot plot (Family-Ctc)
+```{r fig.width=20, fig.height=14}
+# Family - Cell type classごとにDot plot
+annotation <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+annotation_Ctc <- annotation %>% select(Cell_type_class, Cell_type) %>% distinct()
+annotation_Family <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/data/Fig2/obj/df_fam.rds")
+annotation_Family <- annotation_Family %>% select(Antigen, Family) %>% distinct()
+
+tib_plot3 <-  tib_plot %>% 
+  left_join(add_expressed_TF, by = c("Antigen", "Cell_type")) %>% 
+  left_join(join_Ctc, by = "Cell_type") %>%
+  left_join(annotation_Family, by = "Antigen") %>%
+  select(Antigen, Cell_type, expressed_TF, unmeasured_TF, num_ChIPseq, Cell_type_class, Family)  %>%
+  filter(is.na(Family) == FALSE & Family != "No_annotation") %>%
+  group_by(Family, Cell_type_class) %>%
+  summarise(
+    total_expressed_TF = sum(expressed_TF, na.rm = TRUE),
+    total_measured_ChIPseq = sum(num_ChIPseq, na.rm = TRUE),
+    total_unmeasured_TF = sum(unmeasured_TF, na.rm = TRUE),
+    ratio_unmeasured = total_unmeasured_TF/total_expressed_TF
+  )
+View(tib_plot3)
+saveRDS(tib_plot3, "/Users/saeko/Unmeasured/data/tib_plot3_HPA_stepMiner.rds")
+
+p <- tib_plot3 %>% 
+  ggplot(aes(x = reorder(Family, -total_unmeasured_TF), y= reorder(Cell_type_class, total_unmeasured_TF), size = ratio_unmeasured, label = total_unmeasured_TF)) + 
+  geom_point(aes(color = ratio_unmeasured)) +
+  geom_text(color = "white", size = 2) +
+  #scale_color_gradientn(colours = viridis::viridis(20), limits = c(0,max(tib_plot$ratio_unmeasured)), oob = scales::squish) +
+  scale_color_gradientn(
+    #colours = c("blue", "white",  "red"),  # お好みの色ベクトル
+    colours = c("white",  "blue"),
+    limits = c(0, max(tib_plot3$ratio_unmeasured)), 
+    oob = scales::squish
+  )+
+  xlab("TF family") +
+  ylab("Cell type class") +
+  theme(
+    aspect.ratio = 0.8,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+    axis.line = element_blank(), # element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(15, "pt")),
+    axis.text.x = element_text(size= unit(15, "pt"), color = "black", angle = 90, hjust = 1),
+    axis.text.y = element_text(size= unit(15, "pt"), color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA))
+
+p
+
+pdf("/Users/saeko/Unmeasured/plot/Dotplot_TFfam_Ctc_cellline_unmeasured_HPA_stepMiner.pdf", width = 30, height = 15)
+plot(p)
+dev.off()
+```
+
+
+# TF markerも考慮する
+```{r}
+TF_marker <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/TFmarker/All_TFmarkers_annotated.tsv")
+View(TF_marker)
+unique(TF_marker$Cell_Name)
+```
+

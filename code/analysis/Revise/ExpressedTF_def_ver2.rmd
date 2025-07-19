@@ -1,0 +1,225 @@
+---
+title: "ExpressedTF_def_ver2"
+output: html_document
+date: "2025-07-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Expressed TFの定義を下記に変更してFigure2の結果を出す。
+気持ち；cell type specificな発現のあるTF-cell typeをunmeasuredとして見逃さないようにしたい
+
+1. あるTFで
+    - Cell typeごとに発現 / 非発現がある
+    - Cell typeに紐づいたcell type classを見る。Cell type classごとに見て、一つでも発現判定されたCell typeがあれば、そのTF-Cell type classは、expressedと定義する
+2. 1を全てのTFで行うと、TF-Ctcペアごとに、新しいexpressed の定義ができる。
+    - Heatmapで眺めてみる
+3. unmeasuredをカウントする
+    - bar plot
+    - Dot plotで
+    
+# library
+```{r}
+library(tidyverse)
+library(dplyr)
+library(patchwork)
+library(ggpubr)
+```
+
+# dataset
+```{r}
+df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+annotation <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
+annotation_Family <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/data/Fig2/obj/df_fam.rds")
+stepminer_all <- read_tsv("/Users/saeko/Unmeasured/data/RNA_expression_HPA_stepminer_all_res.tsv")
+```
+# ベースのデータ作成
+```{r}
+tgt_Ct <- stepminer_all$Cell_type %>% unique()
+tgt_TF <- stepminer_all$Antigen %>% unique()
+Ctc_join <- annotation %>% select(Cell_type_class, Cell_type) %>% 
+  filter(Cell_type %in% tgt_Ct) %>% distinct()
+Family_join <- annotation_Family %>% select(Antigen, Family) %>% 
+  filter(Antigen %in% tgt_TF) %>% distinct()
+
+df_base <- stepminer_all %>% left_join(Ctc_join, by = "Cell_type") %>% 
+  left_join(Family_join, by = "Antigen")
+dim(stepminer_all)
+dim(df_base)
+```
+# 1. Cell type classごとに見て、一つでも発現判定されたCell typeがあれば、そのTF-Cell type classは、expressedと定義
+```{r}
+df_base_expressed <- df_base %>% group_by(Antigen, Cell_type_class) %>%
+  summarise(expressed = ifelse(sum(StepMiner_binary) >= 1, 1, 0))
+unique(df_base_expressed$expressed)
+```
+# 2. heatmap
+```{r}
+df_base_expressed %>% 
+  drop_na(expressed) %>%
+  ggplot(aes(x = reorder(Cell_type_class, -expressed), y = reorder(Antigen, -expressed), fill = factor(expressed))) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "orange")) +
+  labs(
+    title = "Expressed TFs",
+    x = "Cell type class",
+    y = "Antigen (TF)",
+    fill = "# expressed TFs"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank())
+```
+#3. Count unmeasured
+```{r}
+df_chip_count <- df_chip %>% filter(Cell_type_class != "Others") %>%
+  select(Antigen, Cell_type_class) %>% 
+  group_by(Antigen, Cell_type_class) %>% 
+  summarise(n_sample = n()) 
+
+Ctc_list <- df_chip_count$Cell_type_class %>% unique()
+TF_list <- df_chip_count$Antigen %>% unique()
+
+mt_unmeasured <- matrix(nrow = length(TF_list), ncol = length(Ctc_list))
+for (i in 1:length(TF_list)) {
+  tgt_TF <- TF_list[i]
+  for (j in 1:length(Ctc_list)) {
+    tgt_Ctc <- Ctc_list[j]
+    
+    tgt_chip_num <- df_chip_count %>% filter(Antigen == tgt_TF & Cell_type_class == tgt_Ctc) %>% .$n_sample
+    tgt_expressed <- df_base_expressed %>% filter(Antigen == tgt_TF & Cell_type_class == tgt_Ctc) %>% .$expressed
+    if(length(tgt_expressed) != 0){
+      if(length(tgt_chip_num) == 0 & tgt_expressed == 1){
+        tgt_unmeasured <- 1
+      }else{
+        tgt_unmeasured <- 0
+      }
+      mt_unmeasured[i, j] <- tgt_unmeasured
+    }else{
+      mt_unmeasured[i, j] <- NA
+    }
+  }
+}
+rownames(mt_unmeasured) <- TF_list
+colnames(mt_unmeasured) <- Ctc_list
+mt_unmeasured_narm <- mt_unmeasured[!apply(is.na(mt_unmeasured), 1, all), ] #全てNAの行を削除
+mt_unmeasured_narm2 <- mt_unmeasured_narm[, !apply(is.na(mt_unmeasured_narm), 2, all)] #全てNAの列を削除
+saveRDS(mt_unmeasured_narm2, "/Users/saeko/Unmeasured/data/mt_unmeasured_stepminer_Ctc.rds")
+```
+
+```{r}
+mt_unmeasured_narm2 <- readRDS("/Users/saeko/Unmeasured/data/mt_unmeasured_stepminer_Ctc.rds")
+
+row_unmeasured <- rownames(mt_unmeasured_narm2)
+mt_unmeasured_tib <- mt_unmeasured_narm2 %>% as_tibble() %>% mutate(Antigen = row_unmeasured) %>%
+  pivot_longer(-c(Antigen), names_to = "Cell_type_class", values_to = "num_unmeasured") %>%
+  left_join(df_base_expressed, by = c("Antigen", "Cell_type_class")) %>%
+  left_join(Family_join, by = "Antigen") 
+saveRDS(mt_unmeasured_tib, "/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
+```
+
+## barplot
+```{r fig.width=22, fig.height=10}
+mt_unmeasured_tib <- readRDS("/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
+
+tib_barplot <- mt_unmeasured_tib %>%
+  select(Antigen, Cell_type_class, expressed, num_unmeasured) %>%
+  group_by(Cell_type_class) %>%
+  summarise(
+    n = n(),
+    total_expressed_TF_Ctc = sum(expressed),
+    #total_measured_ChIPseq = sum(num_ChIPseq),
+    total_unmeasured_TF_Ctc = sum(num_unmeasured)
+  ) %>%
+  mutate(unmeasured_ratio = total_unmeasured_TF_Ctc / total_expressed_TF_Ctc,
+         Unmeasured_percentage = (unmeasured_ratio*100),
+         Measured_percentage = 100 - Unmeasured_percentage) %>%
+  pivot_longer(-c(Cell_type_class, n, total_expressed_TF_Ctc, total_unmeasured_TF_Ctc, unmeasured_ratio), 
+               names_to = "measure", values_to = "percentage")
+
+tib_barplot %>% 
+  ggplot(aes(x = reorder(Cell_type_class, -unmeasured_ratio), y = percentage, fill = measure, label = round(percentage))) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(y = 110)) +
+  xlab("Cell type class (tissue)")+
+  ylab("Unmeasured(%)")+
+  scale_fill_manual(values = c("gray", "blue3")) +
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        legend.position = c(0.5, 1.1),
+        legend.direction = "horizontal",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=20,face="bold", color = "black"),
+        axis.text.x =element_text(size=20,face="bold", color = "black", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=20,face="bold", color = "black"),
+        axis.title=element_text(size=20,face="bold", color = "black"),
+        aspect.ratio = 0.5
+  )
+```
+
+
+
+## Dotplot
+```{r fig.width=20, fig.height=14}
+# tibble -> matrix
+mt_unmeasured_tib <- readRDS("/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
+
+tib_dotplot <- mt_unmeasured_tib %>% 
+  filter(is.na(Family) == FALSE & Family != "No_annotation" & Family != "Unknown") %>%
+  group_by(Family, Cell_type_class) %>%
+  summarise(
+    total_expressed_TF = sum(expressed, na.rm = TRUE),
+    #total_measured_ChIPseq = sum(num_ChIPseq, na.rm = TRUE),
+    total_unmeasured_TF = sum(num_unmeasured, na.rm = TRUE),
+    ratio_unmeasured = total_unmeasured_TF/total_expressed_TF
+  )
+
+tib_dotplot %>% 
+  ggplot(aes(x = reorder(Family, -total_unmeasured_TF), 
+             y= reorder(Cell_type_class, total_unmeasured_TF), 
+             size = ratio_unmeasured, label = total_unmeasured_TF)) + 
+  geom_point(aes(color = ratio_unmeasured)) +
+  geom_text(color = "white", size = 2) +
+  #scale_color_gradientn(colours = viridis::viridis(20), limits = c(0,max(tib_plot$ratio_unmeasured)), oob = scales::squish) +
+  scale_color_gradientn(
+    #colours = c("blue", "white",  "red"),  # お好みの色ベクトル
+    colours = c("white",  "blue"),
+    limits = c(0, max(tib_dotplot$ratio_unmeasured)), 
+    oob = scales::squish
+  )+
+  xlab("TF family") +
+  ylab("Cell type class") +
+  theme(
+    aspect.ratio = 0.8,
+    plot.background = element_blank(),
+    plot.title = element_text(size = unit(12, "pt")),
+    plot.subtitle = element_text(size = unit(10, "pt")),
+    plot.caption = element_text(size = unit(8, "pt")),
+    plot.tag = element_text(size = unit(18, "pt")),
+    axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
+    axis.line = element_blank(), # element_line(linewidth = unit(0.5, "pt")),
+    axis.title = element_text(size = unit(15, "pt")),
+    axis.text.x = element_text(size= unit(15, "pt"), color = "black", angle = 90, hjust = 1),
+    axis.text.y = element_text(size= unit(15, "pt"), color = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(fill = NA, colour = "black", linewidth = unit(0.25, "pt")),
+    panel.background = element_blank(),
+    legend.key = element_blank(),
+    legend.title = element_text(size = unit(10, "pt")),
+    legend.text = element_text(size = unit(10, "pt")),
+    strip.text = element_text(colour = "black", size = unit(8, "pt")),
+    strip.background = element_rect(fill = NA, color = NA))
+
+```
+# 4. その他のFig2-3の結果確認
+## Fig. 2D
+```{r}
+
+```
+
+## Fig. 3 
