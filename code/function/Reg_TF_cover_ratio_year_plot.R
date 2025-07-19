@@ -36,13 +36,17 @@ Reg_TF_cover_ratio_year_plot <- function(calc_opt){
   }else{
     df_binded1 <- read_tsv("/Users/saeko/Unmeasured/data/Reg_TF_cover_ratio/Reg_TF_cover_ratio_15ct_binded.tsv")
     df_binded2 <- df_binded1 %>% mutate(label = ifelse(year == 2011 | year == 2020, Cell_type, ""))
-    color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
+    #color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
+    color_list <- c("#9E0142", "#E04E4A", "#BC5090", "#2F4B7C", "#FFA600", "#74C7A4", "#387FB9",
+                    "#593F53", "#834C09", "#1E90FF", "#58508D", "#87CEEB", "#6ABDB2", "#13776F", 
+                    "#003C30", "#DC143C", "#00BFFF", "#FF6347", "#FF1493", "#DB7093")
     
     p1 <- df_binded2 %>% ggplot(aes(x = year, y = RR_cover_ratio, color = Cell_type, label = label)) +
       geom_point() +
       geom_line() +
       geom_label_repel(size = 10) +
       scale_color_manual(values = color_list) +
+      #scale_color_d3(palette = "category20c") +
       xlab("Year")+
       ylab("Reg-TF cover ratio")+
       theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
@@ -55,9 +59,9 @@ Reg_TF_cover_ratio_year_plot <- function(calc_opt){
             panel.background = element_blank(), 
             axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
             axis.line = element_line(linewidth = unit(0.5, "pt")),
-            axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
-            axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
-            axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold", angle = 45, hjust = 1),
+            axis.title = element_text(size = unit(30, "pt"), colour = "black"),
+            axis.text = element_text(size = unit(30, "pt"), colour = "black"),
+            axis.text.x =element_text(size = unit(30, "pt"), colour = "black"),
             # axis.line = element_line(colour="black"),
             aspect.ratio = 1
       ) 
@@ -70,6 +74,7 @@ Reg_TF_cover_ratio_year_plot <- function(calc_opt){
       geom_line()+
       geom_label_repel(size = 10) +
       scale_color_manual(values = color_list) +
+      #scale_color_d3(palette = "category20c") +
       xlab("Number of unique TFs (log10)")+
       ylab("Reg-TF cover ratio")+
       theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
@@ -82,9 +87,9 @@ Reg_TF_cover_ratio_year_plot <- function(calc_opt){
             panel.background = element_blank(), 
             axis.ticks = element_line(colour = "black", linewidth = unit(0.5, "pt")),
             axis.line = element_line(linewidth = unit(0.5, "pt")),
-            axis.title = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
-            axis.text = element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
-            axis.text.x =element_text(size = unit(30, "pt"), colour = "black", face = "bold"),
+            axis.title = element_text(size = unit(30, "pt"), colour = "black"),
+            axis.text = element_text(size = unit(30, "pt"), colour = "black"),
+            axis.text.x =element_text(size = unit(30, "pt"), colour = "black"),
             # axis.line = element_line(colour="black"),
             aspect.ratio = 1
       ) 

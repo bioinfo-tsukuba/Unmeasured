@@ -43,12 +43,12 @@ Dotplot_fam_ctc_unmeasured_v2 <- function(calc_opt, tgt_threshold){
     mt_Chip7 <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip7.rds")
     
     # FPKM細胞ごとに上位25% or 50%であるTF-CTCの組み合わせをcount
-    mt_totalTF <- matrix(nrow = nrow(mt_Chip6), ncol = ncol(mt_Chip6))
-    for (i in 1:nrow(mt_Chip6)) {
-      for (j in 1:ncol(mt_Chip6)) {
+    mt_totalTF <- matrix(nrow = nrow(mt_Chip7), ncol = ncol(mt_Chip7))
+    for (i in 1:nrow(mt_Chip7)) {
+      for (j in 1:ncol(mt_Chip7)) {
         
-        tgt_TF <- rownames(mt_Chip6)[i]
-        tgt_tissue <- colnames(mt_Chip6)[j]
+        tgt_TF <- rownames(mt_Chip7)[i]
+        tgt_tissue <- colnames(mt_Chip7)[j]
         threshold <- quantile(mt_RNA4[, tgt_tissue], tgt_threshold) 
         #threshold <- quantile(mt_RNA2[, j], tgt_threshold) #第三四分位数を求める
         if(tgt_TF %in% rownames(mt_RNA4)){
@@ -77,7 +77,7 @@ Dotplot_fam_ctc_unmeasured_v2 <- function(calc_opt, tgt_threshold){
     summarise(total_expressed_TF = sum(expressed_TF))
   
   mt_Chip7 <- readRDS("/Users/saeko/Unmeasured/data/mt_Chip7.rds")
-  rownames_TF_chip <- rownames(mt_Chip6)
+  rownames_TF_chip <- rownames(mt_Chip7)
   mt_Chip7_tib <- mt_Chip7 %>% as_tibble() %>% mutate(Antigen = rownames_TF_chip) %>%
     left_join(df3_join, by = "Antigen") %>%
     pivot_longer(-c(Antigen, Family), names_to = "Cell_type_class", values_to = "num_ChIPseq") %>%
@@ -106,7 +106,7 @@ Dotplot_fam_ctc_unmeasured_v2 <- function(calc_opt, tgt_threshold){
     #scale_color_gradientn(colours = viridis::viridis(20), limits = c(0,max(tib_plot$ratio_unmeasured)), oob = scales::squish) +
     scale_color_gradientn(
       #colours = c("blue", "white",  "red"),  # お好みの色ベクトル
-      colours = c("white",  "red"),
+      colours = c("white",  "blue"),
       limits = c(0, max(tib_plot$ratio_unmeasured)), 
       oob = scales::squish
     )+
@@ -134,13 +134,7 @@ Dotplot_fam_ctc_unmeasured_v2 <- function(calc_opt, tgt_threshold){
       strip.text = element_text(colour = "black", size = unit(8, "pt")),
       strip.background = element_rect(fill = NA, color = NA))
   
-  
-  # p2 <- p + 
-  #   geom_xsidecol(aes(x = Family, y = n_sample), data = tmp, stat = "identity", width = 0.5, fill = "blue4") +
-  #   geom_ysidecol(aes(x = n_sample, y = Cell_type_class), data = tmp, stat = "identity", width = 0.5, fill = "blue4") +
-  #   theme(
-  #     legend.position = "none"
-  #   ) 
+  write_tsv(tmp5, paste0("/Users/saeko/Unmeasured/paper/Revisionv1/Supplementary_table/Fig2B_unmeasured_", 1-tgt_threshold, ".tsv"))
   
   return(p)
   

@@ -3,9 +3,13 @@ GWAS_cover_ratio_year_plot <- function(){
   library(tidyverse)
   library(ggrepel)
   library(RColorBrewer)
+  library(ggsci)
 
   ctc_plot_df2 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_cover_ratio/ctc_plot_df2.tsv")
-  color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
+  #color_list <- c(brewer.pal(10,"Spectral"),brewer.pal(10,"BrBG"))
+  color_list <- c("#9E0142", "#E04E4A", "#BC5090", "#2F4B7C", "#FFA600", "#74C7A4", "#387FB9",
+                  "#593F53", "#834C09", "#1E90FF", "#58508D", "#87CEEB", "#6ABDB2", "#13776F", 
+                  "#003C30", "#DC143C", "#00BFFF", "#FF6347", "#FF1493", "#DB7093")
   ctc_plot_df3 <- ctc_plot_df2 %>% mutate(label = ifelse(year == 2023, Cell_type_class, ""))
   
   p1 <- ctc_plot_df3 %>% drop_na(Cell_type_class) %>% 
@@ -15,6 +19,7 @@ GWAS_cover_ratio_year_plot <- function(){
     geom_line()+
     geom_label_repel(size = 10) +
     scale_color_manual(values = color_list) +
+    #scale_color_d3(palette = "category20c") +
     labs(
       x = "Year",
       y = "GWAS-SNP cover ratio",
@@ -44,6 +49,7 @@ GWAS_cover_ratio_year_plot <- function(){
     geom_line()+
     geom_label_repel(size = 10) +
     scale_color_manual(values = color_list) +
+    #scale_color_d3(palette = "category20c") +
     labs(
       x = "Number of unique TFs",
       y = "GWAS-SNP cover ratio",

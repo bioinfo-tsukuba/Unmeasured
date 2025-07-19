@@ -210,6 +210,7 @@ DEG_pub_violin <- function(){
     xlab("log10(Number of publication)")+
     ylab("Number of DEGs") +
     scale_color_manual(values = c("gray", "blue4"))+
+    geom_hline(yintercept = 1000, linetype = "dashed", color = "black")+
     theme(plot.title = element_text(face="bold",hjust = 0.5), 
           legend.position = c(0.2,0.9),
           legend.title = element_text(size = 15, face="bold", color = "black"),

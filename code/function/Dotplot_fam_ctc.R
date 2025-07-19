@@ -57,8 +57,8 @@ Dotplot_fam_ctc <- function(){
       strip.background = element_rect(fill = NA, color = NA))
   
   p2 <- p + 
-    geom_xsidecol(aes(x = reorder(Family, -n_sample), y = n_sample), data = tmp, stat = "identity", width = 0.5, fill = "blue4") +
-    geom_ysidecol(aes(x = n_sample, y = Cell_type_class), data = tmp, stat = "identity", width = 0.5, fill = "blue4") +
+    geom_xsidecol(aes(x = reorder(Family, -n_sample), y = n_sample), data = tmp, stat = "identity", width = 0.5, fill = "black") +
+    geom_ysidecol(aes(x = n_sample, y = Cell_type_class), data = tmp, stat = "identity", width = 0.5, fill = "black") +
     theme(
       legend.position = "none"
     ) 

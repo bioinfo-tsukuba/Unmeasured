@@ -74,7 +74,7 @@ xgboost_plot <- function(){
     coord_flip() +
     theme_bw() +
     xlab("Feature") +
-    ylab("Feature Importance") +
+    ylab("Feature Importance(mean)") +
     theme(plot.title = element_text(size = unit(15, "pt"), face="bold"),
           legend.position = "none",
           legend.title = element_text(size = unit(15, "pt")),

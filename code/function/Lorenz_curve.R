@@ -130,7 +130,7 @@ Lorenz_curve <- function(){
          y = "Comulative normalized ChIP-seq")+
     annotate("text", x = 0.2, y = 0.6, label = "ChIP-Atlas", color = "red", size = 5, hjust = 0) +
     annotate("text", x = 0.2, y = 0.7, label = "GTRD", color = "blue", size = 5, hjust = 0) +
-    annotate("text", x = 0.2, y = 0.8, label = "remap2", color = "green4", size = 5, hjust = 0) +
+    annotate("text", x = 0.2, y = 0.8, label = "ReMap", color = "green4", size = 5, hjust = 0) +
     annotate("text", x = 0.2, y = 0.9, label = "Line of perfect equality", color = "black", size = 5, hjust = 0) +
     annotate("segment", x = 0.05, xend = 0.18, y = 0.6, yend = 0.6, color = "red", linetype = "solid", size = 1) +
     annotate("segment", x = 0.05, xend = 0.18, y = 0.7, yend = 0.7, color = "blue", linetype = "solid", size = 1) +
@@ -274,7 +274,7 @@ Lorenz_curve <- function(){
          y = "Comulative normalized ChIP-seq")+
     annotate("text", x = 0.2, y = 0.6, label = "ChIP-Atlas", color = "red", size = 5, hjust = 0) +
     annotate("text", x = 0.2, y = 0.7, label = "GTRD", color = "blue", size = 5, hjust = 0) +
-    annotate("text", x = 0.2, y = 0.8, label = "remap2", color = "green4", size = 5, hjust = 0) +
+    annotate("text", x = 0.2, y = 0.8, label = "ReMap", color = "green4", size = 5, hjust = 0) +
     annotate("text", x = 0.2, y = 0.9, label = "Line of perfect equality", color = "black", size = 5, hjust = 0) +
     annotate("segment", x = 0.05, xend = 0.18, y = 0.6, yend = 0.6, color = "red", linetype = "solid", size = 1) +
     annotate("segment", x = 0.05, xend = 0.18, y = 0.7, yend = 0.7, color = "blue", linetype = "solid", size = 1) +

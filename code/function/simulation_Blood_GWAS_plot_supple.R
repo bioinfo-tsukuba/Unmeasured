@@ -3,7 +3,8 @@ simulation_Blood_GWAS_plot_supple <- function(){
   library(tidyverse)
   library(ggrepel)
   
-  df_all3 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/df_all3.tsv")
+  #df_all3 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2024_07_13_Blood/df_all3.tsv")
+  df_all3 <- read_tsv("/Users/saeko/Unmeasured/data/GWAS_simulation_v1/2025_07_03_Blood/df_all3.tsv")
   
   # Simulation number = 0を"real"に変更
   df_real <- df_all3 %>% filter(simulation_ID == 0) %>% select(-simulation_ID) %>% 
@@ -39,7 +40,7 @@ simulation_Blood_GWAS_plot_supple <- function(){
              vjust = -1, color = "blue", size = unit(7, "pt")) +
     annotate("text", x = mean(df_all4$year)+2, y = min(df_all4$GWAS_cover_ratio)+0.02, 
              label = paste0("AUC = ", real_auc), 
-             vjust = -1, color = "gray", size = unit(7, "pt")) +
+             vjust = -1, color = "black", size = unit(7, "pt")) +
     theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
           legend.position = c(0.2,0.8),
           legend.title = element_text(size = unit(20, "pt")),
@@ -72,7 +73,7 @@ simulation_Blood_GWAS_plot_supple <- function(){
              vjust = -1, color = "blue", size = unit(7, "pt")) +
     annotate("text", x = mean(df_all4$cum_uniq_TF)+2, y = min(df_all4$GWAS_cover_ratio)+0.02, 
              label = paste0("AUC = ", real_auc), 
-             vjust = -1, color = "gray", size = unit(7, "pt")) +
+             vjust = -1, color = "black", size = unit(7, "pt")) +
     theme(plot.title = element_text(size = unit(15, "pt"), face="bold"), 
           legend.position = c(0.2,0.8),
           legend.title = element_text(size = unit(20, "pt")),
