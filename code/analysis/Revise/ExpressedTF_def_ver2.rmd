@@ -31,15 +31,15 @@ library(ggpubr)
 # dataset
 ```{r}
 df_chip <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
-annotation <- read_tsv("/Users/saeko/Unmeasured/data/SRX_date_20231004_unmeasured_added.tsv")
 annotation_Family <- readRDS("/Users/saeko/Documents/MOCCS/paper_figure/MOCCS_paper_public/data/Fig2/obj/df_fam.rds")
 stepminer_all <- read_tsv("/Users/saeko/Unmeasured/data/RNA_expression_HPA_stepminer_all_res.tsv")
 ```
 # ベースのデータ作成
+df_baseには、2309TFが含まれる
 ```{r}
 tgt_Ct <- stepminer_all$Cell_type %>% unique()
 tgt_TF <- stepminer_all$Antigen %>% unique()
-Ctc_join <- annotation %>% select(Cell_type_class, Cell_type) %>% 
+Ctc_join <- df_chip %>% select(Cell_type_class, Cell_type) %>% 
   filter(Cell_type %in% tgt_Ct) %>% distinct()
 Family_join <- annotation_Family %>% select(Antigen, Family) %>% 
   filter(Antigen %in% tgt_TF) %>% distinct()
@@ -73,6 +73,8 @@ df_base_expressed %>%
         axis.text.y = element_blank())
 ```
 #3. Count unmeasured
+Cell type classのOthersを除去すると、df_chip_countのTF数が1804へ減少する。
+expressed判定ができていない(=human protein atlasにTF expressionが入っていない)TFを除去すると、mt_unmeasuredでは、1730TFへ減少した。
 ```{r}
 df_chip_count <- df_chip %>% filter(Cell_type_class != "Others") %>%
   select(Antigen, Cell_type_class) %>% 
@@ -119,7 +121,6 @@ mt_unmeasured_tib <- mt_unmeasured_narm2 %>% as_tibble() %>% mutate(Antigen = ro
   left_join(Family_join, by = "Antigen") 
 saveRDS(mt_unmeasured_tib, "/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
 ```
-
 ## barplot
 ```{r fig.width=22, fig.height=10}
 mt_unmeasured_tib <- readRDS("/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
@@ -218,8 +219,136 @@ tib_dotplot %>%
 ```
 # 4. その他のFig2-3の結果確認
 ## Fig. 2D
+```{r fig.width=5, fig.height=8}
+df_marker <- read_tsv("/Users/saeko/Documents/MOCCS/important_chipseq_prediction/data/DEG_TFmarker_pub/summary_allstats_v3.tsv")
+mt_unmeasured_tib <- readRDS("/Users/saeko/Unmeasured/data/tib_unmeasured_stepminer_Ctc.rds")
+unmeasured_join <- mt_unmeasured_tib %>% select(Antigen, Cell_type_class, num_unmeasured)
+colnames(unmeasured_join) <- c("TF", "Cell_type_class", "num_unmeasured")
+
+tib_marker_plot <- df_marker %>% 
+  left_join(unmeasured_join, by = c("TF", "Cell_type_class")) %>%
+  drop_na(TF, Cell_type_class) %>%
+  mutate(label_marker = ifelse(is.na(Gene_type) == FALSE, "Marker", "No marker"),
+         label_chip_measure = ifelse(num_unmeasured == 1, "Unmeasured", "Measured")) %>%
+  filter(Cell_type_class != "Others" & is.na(label_chip_measure) == FALSE) %>%
+  select(-Gene_type) %>% distinct() 
+
+tib_marker_plot %>% ggplot(aes(x = label_chip_measure, y = DEG_num_thre_p, fill = label_chip_measure)) +
+  geom_violin() +
+  geom_point() +
+  scale_fill_manual(values = c("gray", "blue4"))+
+  xlab("Measure")+
+  ylab("Number of DEGs")+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        legend.position = "none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=30, color = "black"),
+        axis.text.x =element_text(size=30, color = "black", angle = 45, hjust = 1),
+        axis.text.y =element_text(size=30,color = "black"),
+        axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+        axis.title.y = element_text(size=30, color = "black"),
+        aspect.ratio = 1
+  )+
+  stat_compare_means(
+    method = "wilcox.test",         # t検定。Wilcoxonなら "wilcox.test"
+    comparisons = list(c("Unmeasured", "Measured")),  # 比較したいグループのペア
+    label = "p.signif",        # アスタリスク（*, **, ***）で表示
+    size = 5                 # p値表示の文字サイズ
+  )
+```
+```{r fig.width=5, fig.height=8}
+tib_marker_plot %>% 
+  ggplot(aes(x = label_marker, y = DEG_num_thre_p, fill = label_marker)) +
+    geom_violin() +
+    geom_point() +
+    scale_fill_manual(values = c("#D7191C", "gray"))+
+    xlab("TF marker")+
+    ylab("Number of DEGs")+
+    theme(plot.title = element_text(face="bold",hjust = 0.5), 
+          legend.position = "none",
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour="black"),
+          axis.text=element_text(size=30,color = "black"),
+          axis.text.x =element_text(size=30, color = "black", angle = 45, hjust = 1),
+          axis.text.y =element_text(size=30, color = "black"),
+          axis.title.x =element_blank(), #element_text(size=30,face="bold", color = "black"),
+          axis.title.y = element_text(size=30, color = "black"),
+          aspect.ratio = 1
+    )+
+  stat_compare_means(
+    method = "wilcox.test",         # t検定。Wilcoxonなら "wilcox.test"
+    comparisons = list(c("Marker", "No marker")),  # 比較したいグループのペア
+    label = "p.signif",        # アスタリスク（*, **, ***）で表示
+    size = 3                 # p値表示の文字サイズ
+  )
+```
+## Fig. 3 
+```{r fig.width=10, fig.height=10}
+tib_marker_plot %>%
+  distinct() %>%
+  ggplot(aes(x = log(pub_count, base = 10), y = DEG_num_thre_p, 
+             color = label_chip_measure,
+             label = key
+  )) +
+  geom_point() +
+  geom_text_repel() +
+  ggtitle("TF-cell type class pairs in KnockTF") +
+  xlab("log10(Number of publication)")+
+  ylab("Number of DEGs") +
+  scale_color_manual(values = c("#D7191C", "blue4"))+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        title = element_text(size=30,face="bold", color = "black"), 
+        legend.position = c(0.2,0.8),
+        legend.title = element_text(size = 15, face="bold", color = "black"),
+        legend.text = element_text(size = 15, face="bold", color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        axis.text=element_text(size=30, color = "black"),
+        axis.text.x =element_text(size=30, color = "black"),
+        axis.text.y =element_text(size=30,color = "black"),
+        axis.title.x = element_text(size=30, color = "black"), 
+        axis.title.y = element_text(size=30,color = "black"),
+        aspect.ratio = 1
+  )
+
+tib_marker_plot %>%
+  filter(label_marker == "Marker") %>%
+  ggplot(aes(x = log(pub_count, base = 10), y = DEG_num_thre_p, 
+             color = label_chip_measure,
+             label = key
+  )) +
+  geom_point() +
+  geom_text_repel() +
+  ggtitle("TF markers")+ 
+  xlab("log10(Number of publication)")+
+  ylab("Number of DEGs") +
+  scale_color_manual(values = c("gray", "blue4"))+
+  geom_hline(yintercept = 1000, linetype = "dashed", color = "black")+
+  theme(plot.title = element_text(face="bold",hjust = 0.5), 
+        legend.position = c(0.2,0.9),
+        legend.title = element_text(size = 15, face="bold", color = "black"),
+        legend.text = element_text(size = 15, face="bold", color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour="black"),
+        title = element_text(size=30, color = "black"), 
+        axis.text=element_text(size=30, color = "black"),
+        axis.text.x =element_text(size=30, color = "black"),
+        axis.text.y =element_text(size=30, color = "black"),
+        axis.title.x = element_text(size=30, color = "black"),
+        axis.title.y = element_text(size=30, color = "black"),
+        aspect.ratio = 1
+  )
+```
 ```{r}
 
 ```
 
-## Fig. 3 

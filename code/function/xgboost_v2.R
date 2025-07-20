@@ -38,12 +38,6 @@ xgboost_plot_v2 <- function(){
   res_df2 <- res_df %>% left_join(var_num_df, by = "number")
   res_df3 <- res_df2 %>% mutate(Feature = ifelse(number == "pub_num", "pub_num", var)) %>% select(-var) %>% arrange(-Importance)
   top_feature <- res_df3[1:30,]$Feature
-  # top_faeture_name <- c("Pub_num", "low_complex", "exon_var.mis", "glutamin_acid", "exon_var.lof", 
-  #                       "aspartic_acid","SignalP", "exon_var.syn", "antisense", "codon_bias",
-  #                       "gene_essentiality_A375", "code_seq_RNA_AAG", "glutamine", "cystein", "code_seq_RNA_ATC",
-  #                       "arginine", "exome.variation", "total.antisense", "arginine", "total.sense",
-  #                       "hydrophobic.amino.acids", "RNA_CCT", "RNA_CAC", "low_complex_20aa", "RNA_exp",
-  #                       "gene_essentiality_HCT116", "Aminoacids_swiss_or_tremb", "histidine", "RNA_GAG", "isoleucine")
   top_feature_name <- c("helix_affine_aa", "hydrophobic_aa", "pub_num", "codon_bias_wright", "RNA_expr_reh", "codon_freq_GGT", 
                         "start_codon_ATG", "RNA_expr_hel", "codon_bias_cds", "exome_var_prec", "RNA_expr_urinarybladder", 
                         "RNA_expr_skeletalmuscle", "codon_freq_CAT", "low_complexity_frac", "codon_freq_AGA", "codon_freq_ACT", 

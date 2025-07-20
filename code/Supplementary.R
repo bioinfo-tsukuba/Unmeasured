@@ -36,15 +36,33 @@ ggsave("/Users/saeko/Unmeasured/plot/Dotplot_S1_fam_ct.pdf", dotplot ,width = 15
 
 
 # Supplementary FPKM threshold
-source("/Users/saeko/Unmeasured/code/function/FPKM_threshold_histogream.R")
-p_FPKM <- FPKM_threshold_histogram()
-ggsave("/Users/saeko/Unmeasured/plot/FPKM_threshold_histogram.pdf", p_FPKM, width = 9, height = 9)
+# source("/Users/saeko/Unmeasured/code/function/FPKM_threshold_histogream.R")
+# p_FPKM <- FPKM_threshold_histogram()
+# ggsave("/Users/saeko/Unmeasured/plot/FPKM_threshold_histogram.pdf", p_FPKM, width = 9, height = 9)
 
 
 # Dotplot Unmeasured(%) (TF family-Cell type), including measure;0 
-source("/Users/saeko/Unmeasured/code/function/Dotplot_fam_ctc_unmeasured_v2.R")
-calc_opt <- "FALSE"
-tgt_threshold <- 0.75 #上位25%
-#tgt_threshold <- 0.50 #上位50%
-dotplot <- Dotplot_fam_ctc_unmeasured_v2(calc_opt, tgt_threshold)
-ggsave(paste0("/Users/saeko/Unmeasured/plot/Dotplot_fam_ct_unmeasured_", tgt_threshold,"_v2.pdf"), dotplot ,width = 15, height = 10)
+# source("/Users/saeko/Unmeasured/code/function/Dotplot_fam_ctc_unmeasured_v2.R")
+# calc_opt <- "FALSE"
+# tgt_threshold <- 0.75 #上位25%
+# #tgt_threshold <- 0.50 #上位50%
+# dotplot <- Dotplot_fam_ctc_unmeasured_v2(calc_opt, tgt_threshold)
+# ggsave(paste0("/Users/saeko/Unmeasured/plot/Dotplot_fam_ct_unmeasured_", tgt_threshold,"_v2.pdf"), dotplot ,width = 15, height = 10)
+
+# Heatmap Unmeasured(%) (TF-Cell type), including measure;0, stepminer,
+source("/Users/saeko/Unmeasured/code/function/Dotplot_TF_ct_unmeasured_rev1.R")
+dotplot <- Dotplot_TF_ct_unmeasured_rev1()
+ggsave(paste0("/Users/saeko/Unmeasured/plot/Heatmap_TF_ct_unmeasured_rev1.pdf"), dotplot, width = 15, height = 10)
+
+
+# Simulation, supplementary -----
+source("/Users/saeko/Unmeasured/code/function/simulation_Blood_GWAS_plot_supple.R")
+p_list <- simulation_Blood_GWAS_plot_supple()
+ggsave("csimulation_Blood_GWAS_ratio_supple1_v2.pdf", p_list[[1]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_supple2_v2.pdf", p_list[[2]], width = 9, height = 9)
+
+# Simulation, sub-sampling
+source("/Users/saeko/Unmeasured/code/function/simulation_sub_sampling_supple.r")
+tgt_ratio <- 0.5  # 0.9or0.5
+p_list <- simulation_sub_sampling(tgt_ratio)
+ggsave(paste0("/Users/saeko/Unmeasured/plot/GWAS_cover_simulation_v2/simulation_sub_sampling_boxplot_", tgt_ratio, ".pdf"), p_list, width = 10, height = 6)

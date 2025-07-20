@@ -25,12 +25,12 @@ ggsave("/Users/saeko/Unmeasured/plot/sctter_uniqTF_GWAS_ratio.pdf", p_list[[2]],
 ## year plot & ratio vs unique TFs 
 source("/Users/saeko/Unmeasured/code/function/simulation_Blood_GWAS_plot.R")
 p_list <- simulation_Blood_GWAS_plot()
-ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio.pdf", p_list[[1]], width = 9, height = 9)
-ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_cum_TF.pdf", p_list[[2]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_v2.pdf", p_list[[1]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_cum_TF_v2.pdf", p_list[[2]], width = 9, height = 9)
 
 # Simulation, supplementary -----
 source("/Users/saeko/Unmeasured/code/function/simulation_Blood_GWAS_plot_supple.R")
 p_list <- simulation_Blood_GWAS_plot_supple()
-ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_supple1.pdf", p_list[[1]], width = 9, height = 9)
-ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_supple2.pdf", p_list[[2]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_supple1_v2.pdf", p_list[[1]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/simulation_Blood_GWAS_ratio_supple2_v2.pdf", p_list[[2]], width = 9, height = 9)
 

@@ -28,10 +28,15 @@ ggsave("/Users/saeko/Unmeasured/plot/Lorenz_curve_Ct_ChIPatlas.pdf", p_list[[7]]
 ggsave("/Users/saeko/Unmeasured/plot/Lorenz_curve_Ct_all.pdf", p_list[[8]], width = 9, height = 9)
 
 # xgboost
-source("/Users/saeko/Unmeasured/code/function/xgboost.R")
-p_list <- xgboost_plot()
-ggsave("/Users/saeko/Unmeasured/plot/xgboost_scatter.pdf", p_list[[1]], width = 9, height = 9)
-ggsave("/Users/saeko/Unmeasured/plot/xgboost_feature_importance.pdf", p_list[[2]], width = 9, height = 18)
+#source("/Users/saeko/Unmeasured/code/function/xgboost.R")
+#p_list <- xgboost_plot()
+#ggsave("/Users/saeko/Unmeasured/plot/xgboost_scatter.pdf", p_list[[1]], width = 9, height = 9)
+#ggsave("/Users/saeko/Unmeasured/plot/xgboost_feature_importance.pdf", p_list[[2]], width = 9, height = 18)
+
+source("/Users/saeko/Unmeasured/code/function/xgboost_v2.R")
+p_list <- xgboost_plot_v2()
+ggsave("/Users/saeko/Unmeasured/plot/xgboost_scatter_rev1.pdf", p_list[[1]], width = 9, height = 9)
+ggsave("/Users/saeko/Unmeasured/plot/xgboost_feature_importance_rev1.pdf", p_list[[2]], width = 9, height = 18)
 
 
 # comparing No. of ChIP-seq 
