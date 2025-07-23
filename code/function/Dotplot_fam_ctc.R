@@ -30,7 +30,7 @@ Dotplot_fam_ctc <- function(){
     ggplot(aes(x = reorder(Family, -n_sample), y= reorder(Cell_type_class, n_sum_sample_ctc), size = percentage, label = n_sample)) + 
     geom_point(aes(color = n_sample)) +
     #geom_text(color = "white", size = 2) +
-    geom_text(color = "black", size = 2) +
+    geom_text(color = "white", size = 1) +
     scale_color_gradientn(colours = viridis::viridis(20), limits = c(0,max(tmp$n_sample)), oob = scales::squish) +
     xlab("TF family") +
     ylab("Cell type class") +
